@@ -252,7 +252,7 @@ a{color:var(--accent)}
         <button id="btn-add" type="button">Add row</button>
         <span class="muted" style="align-self:center">Salaries in $ millions. Leave a season blank when the contract has ended.</span>
       </div>
-      <div class="opt-key" id="opt-key" hidden><span><i class="opt-p"></i>Player option year</span><span><i class="opt-t"></i>Team option year</span></div>
+      <div class="opt-key" id="opt-key" hidden><span><i class="opt-p"></i>Player option years</span><span><i class="opt-t"></i>Team option years</span><span>The option starts in the "Option from" season and the colour runs to the end of the contract.</span></div>
       <div class="panel scroll"><table class="ledger" id="ledger"></table></div>
     </section>
     <section aria-labelledby="h-xl">
@@ -274,7 +274,7 @@ a{color:var(--accent)}
   <div class="tabpane" data-tab="top">
     <section aria-labelledby="h-top">
       <h2 id="h-top">Biggest contracts, payroll and expiries</h2>
-      <p class="muted">Every contract of every team in the league. An expiry is the last season with a salary. Players with a player or team option in that last season are listed separately, because the option decides whether they really leave.</p>
+      <p class="muted">Every contract of every team in the league. An expiry is the last season with a salary. Players with a player or team option are listed separately, in the season the option starts, because the option decides whether they really leave.</p>
       <div id="top-box"></div>
     </section>
   </div>
@@ -688,6 +688,19 @@ function labels(){
 }
 function payOf(list,i){var t=0;list.forEach(function(p){t+=(p.sal[i]||0);});return t;}
 function payroll(i){return payOf(S.players,i);}
+function optIdxFromSeason(os){
+  os=os==null?"":String(os).trim(); if(!os) return -1;
+  var LL=labels(), oi=-1; for(var q=0;q<LL.length;q++){if(LL[q]===os||LL[q].indexOf(os)===0||String(LL[q]).slice(2)===os) oi=q;}
+  return oi;
+}
+function baseOvr(r){var sh=num(r&&r.ovr), dl=num(r&&r.ovrChange); return sh==null?null:(dl!=null?sh-dl:sh);}
+function optStart(p){
+  if(p.opt!=="Player"&&p.opt!=="Team") return -1;
+  var li=lastIdx(p); if(li<0) return -1;
+  var k=num(p.optIdx); if(k==null||k<0||k>li) return li;
+  return Math.round(k);
+}
+function isOptYear(p,i){var o=optStart(p); return o>=0&&i>=o&&i<=lastIdx(p);}
 function lastIdx(p){var l=-1;p.sal.forEach(function(v,i){if((v||0)>0)l=i;});return l;}
 function calc(){
   var set=S.settings, L=labels(), rows=[];
@@ -824,7 +837,7 @@ function renderInsights(){
 function renderLedger(){
   var L=labels();
   var h='<thead><tr><th title="Include in trade check">Out</th><th>Name</th><th>Pos</th><th>Age</th><th>OVR</th><th>Kind</th>'+
-    L.map(function(l){return '<th>'+esc(l)+'</th>';}).join("")+'<th>Option</th><th>Note</th><th></th></tr></thead><tbody>';
+    L.map(function(l){return '<th>'+esc(l)+'</th>';}).join("")+'<th>Option</th><th>Option from</th><th>Note</th><th></th></tr></thead><tbody>';
   S.players.forEach(function(p){
     var id=p.id;
     function inp(f,cls,type,val,extra){return '<td><input id="r-'+id+'-'+f+'" class="'+cls+'" data-id="'+id+'" data-f="'+f+'" type="'+type+'" value="'+esc(val==null?"":val)+'" '+(extra||"")+' aria-label="'+f+'"></td>';}
@@ -836,12 +849,13 @@ function renderLedger(){
       inp("age","ag","number",p.age,'min="15" max="50"')+
       inp("ovr","ov","number",p.ovr,'min="40" max="99" '+ovrTitle)+
       '<td><select id="r-'+id+'-kind" class="kd" data-id="'+id+'" data-f="kind" aria-label="kind">'+["Contract","Dead money","Cap hold"].map(function(k){return '<option'+(p.kind===k?" selected":"")+'>'+k+'</option>';}).join("")+'</select></td>'+
-      p.sal.map(function(v,i){var oc=(p.opt==="Player"||p.opt==="Team")&&i===lastIdx(p)?(p.opt==="Player"?" opt-p":" opt-t"):""; return inp("s"+i,"sl"+oc,"number",v,'step="0.01" min="0" placeholder="–"'+(oc?' title="'+p.opt+' option year"':""));}).join("")+
+      p.sal.map(function(v,i){var oc=isOptYear(p,i)?(p.opt==="Player"?" opt-p":" opt-t"):""; return inp("s"+i,"sl"+oc,"number",v,'step="0.01" min="0" placeholder="–"'+(oc?' title="'+p.opt+' option, from '+esc(L[optStart(p)])+'"':""));}).join("")+
       '<td><select id="r-'+id+'-opt" class="op'+(p.opt==="Player"?" opt-p":p.opt==="Team"?" opt-t":"")+'" data-id="'+id+'" data-f="opt" aria-label="option">'+["None","Player","Team"].map(function(k){return '<option'+(p.opt===k||(!p.opt&&k==="None")?" selected":"")+'>'+k+'</option>';}).join("")+'</select></td>'+
+      '<td><select id="r-'+id+'-optIdx" class="op" data-id="'+id+'" data-f="optIdx" aria-label="Option starts in" '+((p.opt==="Player"||p.opt==="Team")?"":"disabled")+'><option value="">last year</option>'+L.map(function(l,i){return '<option value="'+i+'"'+(num(p.optIdx)===i?" selected":"")+'>'+esc(l)+'</option>';}).join("")+'</select></td>'+
       inp("note","nt","text",p.note,'placeholder="Note"')+
       '<td class="x">'+(p.ex?'<span class="badge ex">example</span> ':"")+(p.shot?'<span class="badge check" id="b-'+id+'">'+(missingOf(p).length?'missing '+esc(missingOf(p).join(", ")):'check')+'</span> ':"")+'<button type="button" data-del="'+id+'" aria-label="Delete row">×</button></td></tr>';
   });
-  if(!S.players.length) h+='<tr><td colspan="'+(NY+9)+'" class="muted" style="text-align:center;padding:18px">No contracts yet. Paste a screenshot or add a row.</td></tr>';
+  if(!S.players.length) h+='<tr><td colspan="'+(NY+10)+'" class="muted" style="text-align:center;padding:18px">No contracts yet. Paste a screenshot or add a row.</td></tr>';
   h+='</tbody>';
   $("ledger").innerHTML=h;
   var k=$("opt-key"); if(k) k.hidden=!S.players.some(function(p){return p.opt==="Player"||p.opt==="Team";});
@@ -866,8 +880,9 @@ function onLedgerFocus(e){
 }
 function byId(id){return S.players.filter(function(q){return q.id===id;})[0];}
 function recolorOpt(p){
-  var li=lastIdx(p), cls=p.opt==="Player"?"opt-p":p.opt==="Team"?"opt-t":"";
-  p.sal.forEach(function(v,i){var el=$("r-"+p.id+"-s"+i); if(!el) return; el.classList.remove("opt-p","opt-t"); if(cls&&i===li){el.classList.add(cls); el.title=p.opt+" option year";} else el.removeAttribute("title");});
+  var cls=p.opt==="Player"?"opt-p":p.opt==="Team"?"opt-t":"", L=labels();
+  p.sal.forEach(function(v,i){var el=$("r-"+p.id+"-s"+i); if(!el) return; el.classList.remove("opt-p","opt-t"); if(cls&&isOptYear(p,i)){el.classList.add(cls); el.title=p.opt+" option, from "+L[optStart(p)];} else el.removeAttribute("title");});
+  var os=$("r-"+p.id+"-optIdx"); if(os) os.disabled=!cls;
   var o=$("r-"+p.id+"-opt"); if(o){o.classList.remove("opt-p","opt-t"); if(cls) o.classList.add(cls);}
   var k=$("opt-key"); if(k) k.hidden=!S.players.some(function(q){return q.opt==="Player"||q.opt==="Team";});
 }
@@ -877,8 +892,9 @@ function onLedger(e){
   if(f==="out"){outSet[id]=t.checked;renderTrade();return;}
   if(f[0]==="s"&&f.length===2){p.sal[+f[1]]=num(t.value);}
   else if(f==="age"||f==="ovr"){p[f]=num(t.value);}
+  else if(f==="optIdx"){p.optIdx=t.value===""?null:+t.value;}
   else p[f]=t.value;
-  if(f==='opt'||(f[0]==='s'&&f.length===2)) recolorOpt(p);
+  if(f==='opt'||f==='optIdx'||(f[0]==='s'&&f.length===2)) recolorOpt(p);
   if(p.shot){p.shot=0;var b=$("b-"+id);if(b)b.remove();}
   if(p.ex){p.ex=0;}
   if(e.type==="change"){
@@ -1236,7 +1252,7 @@ var SPEC=[
  ["Draft lottery",[["lotteryTeams","Teams in the lottery"],["lotteryPicks","Top picks drawn by lottery (0 = worst record first, max 5)"],["lotteryOdds","Odds of the top pick by seed, % (worst record first)","text"]]],
  ["Pick rules",[["minFirsts","Minimum first-round picks a team must hold at all times"],["minFirstsStart","Minimum first-round picks at the start of the season"]]],
  ["Rotation rules (from your league chat)",[["total","Minutes per game"],["topN","Top players with a minute floor"],["topMin","Minute floor for them"],["startN","Top players who must start"],["subOvr","Sub-OVR line"],["subMax","Max minutes below that line"],["bench","Max bench players used"]]],
- ["Development and screenshots",[["prospectAge","Prospect up to age"],["vetAge","Veteran from age"],["undoDelta","Undo the ▲/▼ change shown beside a rating, to get the base rating","checkbox"]]]
+ ["Development and screenshots",[["prospectAge","Prospect up to age"],["vetAge","Veteran from age"]]]
 ];
 function renderSettings(){
   var s=S.settings;
@@ -1275,14 +1291,14 @@ function promptBase(){
   var L=labels();
   return "These images are screenshots from an NBA 2K26 franchise or sim league: rosters, contracts, team salary screens, draft pick lists and league standings. "+
   "Read every player row you can see and reply with only one JSON object of this shape:\n"+
-  '{"teams":[{"name":"Golden State Warriors","payroll":null,"cap":null,"tax":null,"players":[{"name":"First Last","pos":"PG","age":24,"ovr":78,"ovrChange":-1,"kind":"Contract","salaries":[12.5,13.1,null,null,null],"option":"None","note":""}],"picks":[{"year":2027,"round":1,"team":"Dallas","protection":"","note":""}]}],"standings":[{"team":"Boston Celtics","w":10,"l":2}]}\n'+
+  '{"teams":[{"name":"Golden State Warriors","payroll":null,"cap":null,"tax":null,"players":[{"name":"First Last","pos":"PG","age":24,"ovr":78,"ovrChange":-1,"ovrArrow":"down","kind":"Contract","salaries":[12.5,13.1,null,null,null],"option":"Team","option_season":"2021-22","note":""}],"picks":[{"year":2027,"round":1,"team":"Dallas","protection":"","note":""}]}],"standings":[{"team":"Boston Celtics","w":10,"l":2}]}\n'+
   "Rules:\n"+
   "- Group players by team. Use one entry in teams for each team that is visible, and merge several screenshots of the same team into one entry.\n"+
   "- name is the team's name exactly as printed on the screen (a title, header, banner or team label). Use null when no team name is visible. Never guess a team from the players you recognise.\n"+
-  "- ovr is the overall rating exactly as shown. ovrChange is the signed change shown next to it (a ▲ with +1 is 1, a ▼ with -1 is -1), or null when none is shown.\n"+
+  "- ovr is the overall rating number exactly as printed. A green ▲ or a red ▼ beside it is a morale change that is already included in that number: ovrChange is the signed amount the arrow shows (green up 2 is 2, red down 3 is -3). Set ovrArrow to \"up\" or \"down\" whenever an arrow is shown, otherwise null. If an arrow is shown but its amount cannot be read, set ovrChange to null and still set ovrArrow. The page removes the change to get the base rating.\n"+
   "- salaries has exactly 5 entries in $ millions for these seasons in order: "+L.join(", ")+". The first entry is the current season. Use null for a season with no salary. If a screen shows dollars, convert to millions (12,500,000 becomes 12.5). If only one salary is shown, put it in the first entry and null in the rest, unless the screen says the contract's years.\n"+
   '- kind is "Contract" unless the screen clearly shows dead money, a waived player or a cap hold ("Dead money" or "Cap hold").\n'+
-  '- option is "Player" or "Team" if an option year is shown, otherwise "None".\n'+
+  '- Options: a salary printed in purple is a team option (the legend on the screen says TEAM), and a salary in a colour the legend labels PLAYER is a player option. Set option to "Team" or "Player" for that contract. option_season is the season label, from the list above, of the FIRST coloured salary in the run, because the option starts there. Later coloured seasons that follow it continuously belong to the same option, so do not report them separately. Use "None" and null when no salary is coloured. Never leave option as None when a salary is purple.\n'+
   "- Use null for any number you cannot read. Never guess a digit. Do not include a player twice.\n"+
   "- payroll, cap and tax for a team are $ millions if a screen shows them, otherwise null.\n"+
   "- picks: when a screen lists draft picks a team owns, put each in that team's picks array. year is the draft year, round is 1 or 2, team is the team the pick originally belongs to as printed (for example Warriors), protection is any protection text shown, otherwise empty. Use [] when no picks are shown, and use an empty players array when a screen shows only picks.\n"+
@@ -1336,13 +1352,20 @@ function applyRows(list,log,arr,undo,tagMode){
     var kind=["Contract","Dead money","Cap hold"].indexOf(r.kind)>=0?r.kind:"Contract";
     var shown=num(r.ovr), delta=num(r.ovrChange), base=shown==null?null:(undo&&delta!=null?shown-delta:shown);
     var rec={name:String(r.name).trim(),pos:r.pos?String(r.pos):"",age:num(r.age),ovr:base,ovrShown:shown,kind:kind,sal:sal,opt:["Player","Team"].indexOf(r.option)>=0?r.option:"None",note:r.note?String(r.note):"",shot:tagAll?1:0};
+    rec.optIdx=null;
+    if(rec.opt!=="None"){
+      var li=lastIdx(rec), os=r.option_season!=null?String(r.option_season).trim():"", oi=optIdxFromSeason(os);
+      if(oi>=0&&li>=0&&oi<=li) rec.optIdx=oi;
+      else notes.push({name:rec.name,note:"has a "+rec.opt.toLowerCase()+" option but the season it starts in could not be read ("+(os?"'"+os+"'":"not given")+"), so the last salary year was assumed. Set 'Option from' in the Roster tab if that is wrong."});
+    }
+    if(r.ovrArrow&&delta==null) notes.push({name:rec.name,note:"has a "+r.ovrArrow+" arrow beside the rating but no amount could be read, so the OVR may still include the morale change. Check it."});
     var m_=missingOf(rec); if(!tagAll&&m_.length) rec.shot=1; if(m_.length) miss.push({name:rec.name,fields:m_});
     if(rec.note) notes.push({name:rec.name,note:rec.note});
     var ex=list.filter(function(p){return (p.name||"").toLowerCase()===rec.name.toLowerCase();})[0];
     if(ex){
       if(rec.ovr!=null&&ex.ovr!=null&&rec.ovr!==ex.ovr) logRating(ex.name,ex.ovr,rec.ovr,"screenshot",log);
       ex.pos=rec.pos||ex.pos;ex.age=rec.age!=null?rec.age:ex.age;if(rec.ovr!=null){ex.ovr=rec.ovr;ex.ovrShown=rec.ovrShown;}ex.kind=rec.kind;
-      rec.sal.forEach(function(v,i){if(v!=null)ex.sal[i]=v;});ex.opt=rec.opt!=="None"?rec.opt:ex.opt;ex.note=rec.note||ex.note;if(tagAll||m_.length) ex.shot=1;upd++;
+      rec.sal.forEach(function(v,i){if(v!=null)ex.sal[i]=v;});ex.opt=rec.opt!=="None"?rec.opt:ex.opt; if(rec.opt!=="None") ex.optIdx=rec.optIdx;ex.note=rec.note||ex.note;if(tagAll||m_.length) ex.shot=1;upd++;
     } else {norm(rec);list.push(rec);added++;}
   });
   return {added:added,upd:upd,skipped:skipped,miss:miss,notes:notes};
@@ -1409,7 +1432,7 @@ function buildPending(out,issues){
 }
 function diffPlayer(ex,r){
   var ch=[], L=labels();
-  if(num(r.ovr)!=null&&ex.ovr!=null&&num(r.ovr)!==ex.ovr) ch.push("OVR "+ex.ovr+" → "+num(r.ovr));
+  if(baseOvr(r)!=null&&ex.ovr!=null&&baseOvr(r)!==ex.ovr) ch.push("OVR "+ex.ovr+" → "+baseOvr(r));
   (Array.isArray(r.salaries)?r.salaries:[]).forEach(function(v,i){var n=num(v); if(n!=null&&ex.sal[i]!=null&&Math.abs(n-ex.sal[i])>0.0001) ch.push(L[i]+" "+ex.sal[i]+" → "+n);});
   return ch;
 }
@@ -1421,9 +1444,9 @@ function renderPreview(){
     var where=T.kind==="new"?'<span class="pill warn">new team will be created</span>':T.kind==="open"?('<span class="pill ok">open team'+(T.noname?", no team name visible":"")+'</span>'):'<span class="pill ok">existing team</span>';
     h+='<div class="pv-g"><label class="chk" for="pv-g'+i+'"><input id="pv-g'+i+'" type="checkbox" data-pv="g:'+i+'"'+(G.on?" checked":"")+'><strong>'+esc(T.label)+'</strong> '+where+'</label>';
     if(plrs.length){
-      h+='<div class="scroll"><table class="ytable"><thead><tr><th class="l">Player</th><th>Pos</th><th>Age</th><th>OVR</th>'+L.map(function(l){return '<th>'+esc(l)+'</th>';}).join("")+'<th class="l">Compared with the team now</th></tr></thead><tbody>'+plrs.map(function(r){
+      h+='<div class="scroll"><table class="ytable"><thead><tr><th class="l">Player</th><th>Pos</th><th>Age</th><th>OVR (base)</th>'+L.map(function(l){return '<th>'+esc(l)+'</th>';}).join("")+'<th class="l">Option</th><th class="l">Compared with the team now</th></tr></thead><tbody>'+plrs.map(function(r){
         var ex=T.d?T.d.players.filter(function(p){return (p.name||"").toLowerCase()===String(r&&r.name||"").trim().toLowerCase();})[0]:null, ch=ex?diffPlayer(ex,r):[], sal=Array.isArray(r.salaries)?r.salaries:[];
-        return '<tr><td class="l">'+esc(r&&r.name||"(no name)")+'</td><td>'+esc(r&&r.pos||"")+'</td><td>'+esc(r&&r.age!=null?r.age:"")+'</td><td>'+esc(r&&r.ovr!=null?r.ovr:"")+'</td>'+L.map(function(l,k){return '<td>'+(num(sal[k])!=null?esc(num(sal[k])):"–")+'</td>';}).join("")+'<td class="l">'+(!ex?'<span class="pill ok">new</span>':ch.length?'<span class="pill warn">changes</span> '+esc(ch.join(", ")):'<span class="pill na">same</span>')+'</td></tr>';
+        return '<tr><td class="l">'+esc(r&&r.name||"(no name)")+'</td><td>'+esc(r&&r.pos||"")+'</td><td>'+esc(r&&r.age!=null?r.age:"")+'</td><td>'+esc(baseOvr(r)==null?"":baseOvr(r))+(num(r&&r.ovrChange)!=null?' <span class="muted">(shown '+esc(num(r.ovr))+', '+(num(r.ovrChange)>0?"+":"")+esc(num(r.ovrChange))+' removed)</span>':(r&&r.ovrArrow?' <span class="pill warn">arrow, amount unread</span>':""))+'</td>'+L.map(function(l,k){var oc=(r&&(r.option==="Team"||r.option==="Player")&&(function(){var oi=optIdxFromSeason(r.option_season); if(oi<0){var last=-1; sal.forEach(function(v,q){if(num(v)>0) last=q;}); oi=last;} return oi>=0&&k>=oi;})())?(r.option==="Player"?" opt-p":" opt-t"):""; return '<td class="'+oc.trim()+'">'+(num(sal[k])!=null?esc(num(sal[k])):"–")+'</td>';}).join("")+'<td class="l">'+(r&&(r.option==="Team"||r.option==="Player")?'<span class="pill '+(r.option==="Player"?"opt-p":"opt-t")+'">'+esc(r.option)+(optIdxFromSeason(r.option_season)>=0?' from '+esc(L[optIdxFromSeason(r.option_season)]):' (season not read)')+'</span>':'—')+'</td><td class="l">'+(!ex?'<span class="pill ok">new</span>':ch.length?'<span class="pill warn">changes</span> '+esc(ch.join(", ")):'<span class="pill na">same</span>')+'</td></tr>';
       }).join("")+'</tbody></table></div>';
     }
     if(picks.length) h+='<p class="src" style="margin-top:8px"><strong>Picks:</strong> '+picks.map(function(p){return esc((p.year==null?"?":p.year)+" R"+(p.round==null?"?":p.round)+" "+(p.team||"?")+(p.top_protected?" · top "+p.top_protected+" protected":p.protection?" · "+p.protection:"")+(p.swap?" · swap"+(p.swap_with?" with "+p.swap_with:""):""));}).join("; ")+'</p>';
@@ -1505,7 +1528,7 @@ async function readShots(){
 function applyPending(){
   if(!pend) return;
   snap();
-  var P=pend, issues=P.issues.slice(), report=[], ids={}, nrows=0, undo=S.settings.undoDelta?1:0;
+  var P=pend, issues=P.issues.slice(), report=[], ids={}, nrows=0, undo=1;
   S.players=S.players.filter(function(p){return !p.ex;});
   P.groups.forEach(function(G){
     if(!G.on) return;
@@ -2362,11 +2385,11 @@ function renderProfile(){
   h+='<div class="panel"><h3 class="sub-h">Contracts ending</h3>';
   if(!list.length) h+='<p class="muted">No contracts entered.</p>';
   else{
-    h+='<div class="scroll"><table class="ytable"><thead><tr><th class="l">After</th><th class="l">Expiring</th><th class="l">With an option</th></tr></thead><tbody>';
+    h+='<div class="scroll"><table class="ytable"><thead><tr><th class="l">Season</th><th class="l">Contract ends after it</th><th class="l">Option starts in it</th></tr></thead><tbody>';
     L.forEach(function(l,i){
-      var ex=list.filter(function(p){return lastIdx(p)===i&&p.opt!=="Player"&&p.opt!=="Team";}), op=list.filter(function(p){return lastIdx(p)===i&&(p.opt==="Player"||p.opt==="Team");});
+      var ex=list.filter(function(p){return lastIdx(p)===i&&p.opt!=="Player"&&p.opt!=="Team";}), op=list.filter(function(p){return optStart(p)===i;});
       if(!ex.length&&!op.length) return;
-      h+='<tr><td class="l">'+esc(l)+'</td><td class="l">'+(ex.length?ex.map(function(p){return pname(p)+' <span class="muted">'+m(p.sal[i])+'</span>';}).join("<br>")+'<br><strong>'+m(ex.reduce(function(a,p){return a+(p.sal[i]||0);},0))+'</strong>':'—')+'</td><td class="l">'+(op.length?op.map(function(p){return '<span class="pill '+(p.opt==="Player"?"opt-p":"opt-t")+'">'+esc(p.opt)+' option</span> '+pname(p)+' <span class="muted">'+m(p.sal[i])+'</span>';}).join("<br>"):'—')+'</td></tr>';
+      h+='<tr><td class="l">'+esc(l)+'</td><td class="l">'+(ex.length?ex.map(function(p){return pname(p)+' <span class="muted">'+m(p.sal[i])+'</span>';}).join("<br>")+'<br><strong>'+m(ex.reduce(function(a,p){return a+(p.sal[i]||0);},0))+'</strong>':'—')+'</td><td class="l">'+(op.length?op.map(function(p){return '<span class="pill '+(p.opt==="Player"?"opt-p":"opt-t")+'">'+esc(p.opt)+' option</span> '+pname(p)+' <span class="muted">'+m(p.sal[i])+(lastIdx(p)>i?" through "+esc(L[lastIdx(p)]):"")+'</span>';}).join("<br>"):'—')+'</td></tr>';
     });
     h+='</tbody></table></div>';
   }
@@ -2395,7 +2418,7 @@ var tc={yr:0,team:"",min:0,n:25};
 function allContracts(){
   var out=[]; allTeams().forEach(function(r){var t=tdata(r.id); t.d.players.forEach(function(p){if(p.kind==="Contract") out.push({team:t.name,tid:t.id,p:p});});}); return out;
 }
-function optPill(p){return p.opt==="Player"||p.opt==="Team"?'<span class="pill '+(p.opt==="Player"?"opt-p":"opt-t")+'">'+esc(p.opt)+' option</span>':'';}
+function optPill(p){return p.opt==="Player"||p.opt==="Team"?'<span class="pill '+(p.opt==="Player"?"opt-p":"opt-t")+'">'+esc(p.opt)+' option from '+esc(labels()[optStart(p)]||"?")+'</span>':'';}
 function renderTop(){
   var box=$("top-box"), L=labels(), set=S.settings, all=allContracts(), teams=allTeams().sort(byname);
   var h='<div class="form" style="margin-bottom:12px"><label for="tc-yr">Season<select id="tc-yr">'+L.map(function(l,i){return '<option value="'+i+'"'+(i===tc.yr?" selected":"")+'>'+esc(l)+'</option>';}).join("")+'</select></label>'+
@@ -2416,16 +2439,16 @@ function renderTop(){
     var d=tdata(r.id).d;
     return '<tr><td class="l"><strong>'+esc(r.name)+'</strong></td>'+L.map(function(l,i){var pay=payOf(d.players,i); return '<td class="'+(pay>set.apron?"neg":pay>set.tax?"mid":"")+'">'+m(pay)+'<br><span class="muted" style="font-size:11px">space '+m(set.cap-pay)+'</span></td>';}).join("")+'</tr>';
   }).join("")+'</tbody></table></div><p class="src" style="margin-top:6px">Red is over the apron, amber is over the tax line.</p>';
-  h+='<h3 class="sub-h" style="margin-top:18px">Contracts ending, by season</h3><p class="src">Expiring means the last season with a salary. A player with an option in that last season is listed apart, because the option decides whether he stays.</p>';
+  h+='<h3 class="sub-h" style="margin-top:18px">Contracts ending, by season</h3><p class="src">Expiring means the last season with a salary. A player with an option is listed apart, in the season the option starts, because the option decides whether he stays.</p>';
   var any=false;
   L.forEach(function(l,i){
-    var pool=all.filter(function(r){return lastIdx(r.p)===i&&(!tc.team||r.tid===tc.team);});
+    var pool=all.filter(function(r){return (optStart(r.p)>=0?optStart(r.p)===i:lastIdx(r.p)===i)&&(!tc.team||r.tid===tc.team);});
     if(!pool.length) return; any=true;
     var ex=pool.filter(function(r){return r.p.opt!=="Player"&&r.p.opt!=="Team";}).sort(function(a,b){return (b.p.sal[i]||0)-(a.p.sal[i]||0);}), op=pool.filter(function(r){return r.p.opt==="Player"||r.p.opt==="Team";}).sort(function(a,b){return (b.p.sal[i]||0)-(a.p.sal[i]||0);});
-    function tbl(list){return '<div class="scroll"><table class="ytable"><thead><tr><th class="l">Player</th><th class="l">Team</th><th>OVR</th><th>Age</th><th>Salary '+esc(l)+'</th><th class="l">Option</th></tr></thead><tbody>'+list.map(function(r){return '<tr><td class="l">'+pname(r.p)+'</td><td class="l">'+esc(r.team)+'</td><td>'+esc(r.p.ovr==null?"":r.p.ovr)+'</td><td>'+esc(r.p.age==null?"":r.p.age)+'</td><td>'+m(r.p.sal[i])+'</td><td class="l">'+optPill(r.p)+'</td></tr>';}).join("")+'</tbody></table></div>';}
+    function tbl(list){return '<div class="scroll"><table class="ytable"><thead><tr><th class="l">Player</th><th class="l">Team</th><th>OVR</th><th>Age</th><th>Salary '+esc(l)+'</th><th class="l">Option (runs to)</th></tr></thead><tbody>'+list.map(function(r){return '<tr><td class="l">'+pname(r.p)+'</td><td class="l">'+esc(r.team)+'</td><td>'+esc(r.p.ovr==null?"":r.p.ovr)+'</td><td>'+esc(r.p.age==null?"":r.p.age)+'</td><td>'+m(r.p.sal[i])+'</td><td class="l">'+optPill(r.p)+'</td></tr>';}).join("")+'</tbody></table></div>';}
     h+='<div class="panel"><h4 style="margin:0 0 6px">Ends after '+esc(l)+'</h4>'+
       (ex.length?'<p class="src"><strong>Expiring: '+ex.length+' player'+(ex.length>1?"s":"")+', '+m(ex.reduce(function(a,r){return a+(r.p.sal[i]||0);},0))+'</strong></p>'+tbl(ex):'<p class="src">No plain expiring contracts.</p>')+
-      (op.length?'<p class="src" style="margin-top:10px"><strong>With an option in '+esc(l)+': '+op.length+' player'+(op.length>1?"s":"")+', '+m(op.reduce(function(a,r){return a+(r.p.sal[i]||0);},0))+'</strong></p>'+tbl(op):'')+'</div>';
+      (op.length?'<p class="src" style="margin-top:10px"><strong>Option decision in '+esc(l)+': '+op.length+' player'+(op.length>1?"s":"")+', '+m(op.reduce(function(a,r){return a+(r.p.sal[i]||0);},0))+'</strong></p>'+tbl(op):'')+'</div>';
   });
   if(!any) h+='<p class="muted">No contracts entered yet.</p>';
   box.innerHTML=h;
@@ -2452,8 +2475,8 @@ function renderPlayerBox(){
   if(!x){box.innerHTML='<p class="muted">No players yet. Enter rosters on the Roster tab or the Parsing tab.</p>';return;}
   var p=x.p, d=x.t.d, L=labels(), li=lastIdx(p), R=d.rot||{m:{},st:{},pp:{}};
   var h='<div class="tiles" style="margin-bottom:14px">'+
-    [["Team",x.t.name,p.kind],["Position / age",(p.pos||"?")+" · "+(p.age==null?"?":p.age),""],["Overall",p.ovr==null?"—":String(p.ovr),p.ovrShown!=null&&p.ovrShown!==p.ovr?"shown "+p.ovrShown:""],[L[0]+" salary",m(p.sal[0]),""],["Contract ends",li>=0?"after "+L[li]:"—",p.opt==="Player"||p.opt==="Team"?p.opt+" option in the last year":""]].map(function(t){return '<div class="tile"><div class="k">'+esc(t[0])+'</div><div class="v" style="font-size:20px">'+esc(t[1])+'</div><div class="n">'+esc(t[2])+'</div></div>';}).join("")+'</div>';
-  h+='<div class="profgrid"><div class="panel"><h3 class="sub-h">Contract</h3><div class="scroll"><table class="ytable"><thead><tr>'+L.map(function(l){return '<th>'+esc(l)+'</th>';}).join("")+'</tr></thead><tbody><tr>'+p.sal.map(function(v,i){return '<td class="'+((p.opt==="Player"||p.opt==="Team")&&i===li?(p.opt==="Player"?"opt-p":"opt-t"):"")+'">'+(v!=null?m(v):"–")+'</td>';}).join("")+'</tr></tbody></table></div><p class="src" style="margin-top:6px">Total remaining: '+m(p.sal.reduce(function(a,v){return a+(v||0);},0))+'</p></div>';
+    [["Team",x.t.name,p.kind],["Position / age",(p.pos||"?")+" · "+(p.age==null?"?":p.age),""],["Overall",p.ovr==null?"—":String(p.ovr),p.ovrShown!=null&&p.ovrShown!==p.ovr?"shown "+p.ovrShown:""],[L[0]+" salary",m(p.sal[0]),""],["Contract ends",li>=0?"after "+L[li]:"—",p.opt==="Player"||p.opt==="Team"?p.opt+" option from "+L[optStart(p)]:""]].map(function(t){return '<div class="tile"><div class="k">'+esc(t[0])+'</div><div class="v" style="font-size:20px">'+esc(t[1])+'</div><div class="n">'+esc(t[2])+'</div></div>';}).join("")+'</div>';
+  h+='<div class="profgrid"><div class="panel"><h3 class="sub-h">Contract</h3><div class="scroll"><table class="ytable"><thead><tr>'+L.map(function(l){return '<th>'+esc(l)+'</th>';}).join("")+'</tr></thead><tbody><tr>'+p.sal.map(function(v,i){return '<td class="'+(isOptYear(p,i)?(p.opt==="Player"?"opt-p":"opt-t"):"")+'">'+(v!=null?m(v):"–")+'</td>';}).join("")+'</tr></tbody></table></div><p class="src" style="margin-top:6px">Total remaining: '+m(p.sal.reduce(function(a,v){return a+(v||0);},0))+'</p></div>';
   var mins=R.m[p.id], logs=(d.ratingLog||[]).filter(function(r){return sameName(r.name,p.name);}), trs=S.trades.filter(function(r){return p.name&&String(r.text).toLowerCase().indexOf(String(p.name).toLowerCase())>=0;});
   h+='<div class="panel"><h3 class="sub-h">Rotation</h3>'+(mins!=null?'<p>'+esc(mins)+' minutes'+(R.st[p.id]?", starter":"")+(R.pp[p.id]?", plays "+esc(R.pp[p.id]):"")+'</p>':'<p class="muted">No minutes entered on the Rotation tab for this team.</p>')+'</div>';
   h+='<div class="panel"><h3 class="sub-h">Rating history</h3>'+(logs.length?'<ul class="list">'+logs.slice(-8).reverse().map(function(r){return '<li><span class="a">'+esc(r.t)+' · '+esc(r.src)+'</span><span class="b">'+r.from+' → '+r.to+'</span></li>';}).join("")+'</ul>':'<p class="muted">No rating changes recorded.</p>')+'</div>';
