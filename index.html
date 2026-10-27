@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Cap Room</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<style>:root{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<style>:root{color-scheme:light}body{margin:0}img{max-width:100%}</style>
 <style>
 /* Layout: navy Mavericks header, a row of section tabs, then one working pane at a time. Cap and roster first, rotation and deals next, then picks, development, scenarios, league settings. */
 :root{
@@ -31,10 +31,11 @@
   color-scheme:dark;
 }
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.5;
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 56px}
 .wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
-.tabpane{display:flex;flex-direction:column;gap:28px;min-width:0}
+.tabpane{display:flex;flex-direction:column;gap:34px;min-width:0}
 h1,h2,h3{font-family:var(--f-display);font-weight:700;letter-spacing:.02em;margin:0;text-wrap:balance}
 h1{font-size:40px;line-height:1}
 h2{font-size:24px;text-transform:uppercase;letter-spacing:.06em;border-bottom:2px solid var(--accent);padding-bottom:4px}
@@ -57,8 +58,12 @@ p{margin:0}
 .acct img{border-radius:50%;width:24px;height:24px;display:block}
 .acct-name{color:var(--ink);font-weight:600}
 .acct-status.ok{color:var(--good)} .acct-status.bad{color:var(--bad)}
-.tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);padding-bottom:0}
-.tabs a{padding:8px 14px;text-decoration:none;color:var(--muted);border-radius:6px 6px 0 0;font-family:var(--f-display);font-weight:600;font-size:18px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+.tabs{display:flex;flex-wrap:wrap;gap:8px 22px;border-bottom:1px solid var(--line);padding:6px 0 8px;background:var(--bg)}
+.tgrp{display:flex;flex-direction:column;gap:2px;min-width:0}
+.tg-l{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);padding-left:4px}
+.tg-r{display:flex;flex-wrap:wrap;gap:2px}
+@media (min-width:900px){.tabs{position:sticky;top:0;z-index:20}}
+.tabs a{padding:5px 11px;text-decoration:none;color:var(--muted);border-radius:6px 6px 0 0;font-family:var(--f-display);font-weight:600;font-size:17px;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
 .tabs a:hover{color:var(--ink);background:var(--surface2)}
 .tabs a[aria-current="page"]{color:var(--accent-ink);background:var(--accent)}
 button,.btn,select,input,textarea{font:inherit;color:inherit}
@@ -82,13 +87,15 @@ section{display:flex;flex-direction:column;gap:14px;min-width:0}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px;min-width:0}
 .scroll{overflow-x:auto;max-width:100%}
 table{border-collapse:collapse;width:100%}
-th,td{padding:6px 8px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line)}
+th,td{padding:7px 10px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line)}
 th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
 th:first-child,td:first-child{text-align:left}
 tbody tr:hover{background:var(--surface2)}
 .ytable td,.ytable th{font-family:var(--f-data);font-variant-numeric:tabular-nums}
 .ytable th{font-family:var(--f-body)}
 .ytable td.l,.ytable th.l{text-align:left}
+.ytable td.l{font-family:var(--f-body)}
+.btn{text-decoration:none}
 .ledger td{padding:3px 4px}
 .ledger input,.ledger select{width:100%;background:transparent;border:1px solid transparent;border-radius:4px;padding:4px 6px;min-width:0}
 .ledger input:hover,.ledger select:hover{border-color:var(--line)}
@@ -149,14 +156,35 @@ textarea.code{font-family:var(--f-data);font-size:13px;min-height:240px}
 .chart .ln{stroke-width:1.5;fill:none}
 .chart .sr{stroke-width:2.5;fill:none}
 .legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--muted)}
+th[tabindex]{cursor:pointer;user-select:none}
+th[tabindex]:hover{color:var(--ink)}
+th[aria-sort]::after{content:" \25B2";font-size:10px;color:var(--accent)}
+th[aria-sort=descending]::after{content:" \25BC"}
+tbody tr:nth-child(even) td{background-image:linear-gradient(rgba(127,127,127,.07),rgba(127,127,127,.07))}
+thead th{border-bottom:2px solid var(--line)}
+tr.me td{background-color:var(--surface2);font-weight:600}
+tr.me td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+.hero{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-between;align-items:center;border-left:5px solid var(--accent)}
+.hero-t{font-family:var(--f-display);font-size:36px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;line-height:1.1;margin:0}
+.actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+a.card{display:flex;flex-direction:column;gap:4px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:8px;padding:12px 14px;text-decoration:none;color:var(--ink)}
+a.card:hover{background:var(--surface2);border-color:var(--accent)}
+a.card strong{font-family:var(--f-display);font-size:19px;letter-spacing:.05em;text-transform:uppercase}
+a.card span{font-size:13px;color:var(--muted)}
+.chk-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.chk-list li.ok{color:var(--good)}
+.chk-list summary{cursor:pointer}
+.chk-list .names{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.6}
+.steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.sdiv{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px}
+summary{cursor:pointer;font-weight:600}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
 .src{font-size:12px;color:var(--muted)}
 a{color:var(--accent)}
 .sub-h{margin-bottom:8px}
 @media (max-width:600px){h1{font-size:34px}.tile .v{font-size:20px}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-</style></head><body>
-
+</style>
 
 <div class="wrap">
   <header class="top">
@@ -195,6 +223,14 @@ a{color:var(--accent)}
   <div id="ex-banner" class="banner" hidden>
     <strong>Example data.</strong> The rows below are placeholders so you can see how the page works. They are not your roster. Reading a screenshot or clicking <em>Clear examples</em> removes them.
     <button id="btn-clear-ex" type="button" style="margin-left:8px">Clear examples</button>
+  </div>
+
+  <!-- HOME -->
+  <div class="tabpane" data-tab="home">
+    <section aria-labelledby="h-home">
+      <h2 id="h-home">Home</h2>
+      <div id="home-box" style="display:flex;flex-direction:column;gap:18px"></div>
+    </section>
   </div>
 
   <!-- CAP -->
@@ -462,10 +498,15 @@ a{color:var(--accent)}
   <div class="tabpane" data-tab="standings">
     <section aria-labelledby="h-st">
       <h2 id="h-st">Standings</h2>
-      <p class="muted">Enter each team's record, or paste a standings screenshot on the Parsing tab. The teams with the worst records go into the draft lottery. Lottery size, picks drawn and the odds are on the League tab.</p>
+      <p class="muted">Overall, conference and division tables, built from the records you enter below or read from a standings screenshot on the Parsing tab. The teams with the worst records go into the draft lottery. Lottery size, picks drawn and the odds are on the League tab.</p>
       <p class="src" id="st-upd"></p>
-      <div class="toolbar"><button id="btn-rec-clear" type="button">Clear all records</button></div>
-      <div class="panel scroll"><table class="ytable" id="st-tbl"></table></div>
+      <div id="st-view" style="display:flex;flex-direction:column;gap:18px"></div>
+      <details class="panel" id="st-edit">
+        <summary>Enter records and set conferences and divisions</summary>
+        <div class="toolbar" style="margin:10px 0"><button id="btn-rec-clear" type="button">Clear all records</button><button id="btn-div-reset" type="button">Reset divisions to automatic</button></div>
+        <div class="scroll"><table class="ytable" id="st-tbl"></table></div>
+      </details>
+      <p class="src">Default conferences and divisions: the six-division list in the <a href="https://www.lines.com/guides/what-are-the-6-nba-divisions/1572" target="_blank" rel="noopener">lines.com guide to the 6 NBA divisions</a> (page "Updated October 10, 2026", accessed 2026-10-27). Teams are matched by city or nickname. Seattle (placed in the Pacific) and Vancouver (placed in the Southwest) are my assumptions, because those teams are not in today's NBA. Any team can be moved with the Division menu in the table above.</p>
     </section>
     <section aria-labelledby="h-lot">
       <h2 id="h-lot">Draft lottery</h2>
@@ -515,7 +556,7 @@ a{color:var(--accent)}
 (function(){
 "use strict";
 var KEY="caproom-v1", NY=5, POS=["PG","SG","SF","PF","C"];
-var TABS=[["cap","Cap"],["teams","Teams"],["top","Top contracts"],["players","Players"],["roster","Roster"],["parse","Parsing"],["rotation","Rotation"],["gameplan","Gameplan"],["deals","Deals"],["picks","Picks"],["standings","Standings"],["development","Development"],["scenarios","Scenarios"],["audit","Audit"],["league","League"]];
+var TABS=[["home","Home"],["cap","Cap"],["teams","Teams"],["top","Top contracts"],["players","Players"],["roster","Roster"],["parse","Parsing"],["rotation","Rotation"],["gameplan","Gameplan"],["deals","Deals"],["picks","Picks"],["standings","Standings"],["development","Development"],["scenarios","Scenarios"],["audit","Audit"],["league","League"]];
 var DEFAULT_RULES=[
 "Free agency (rule fragments seen in your league chat; verify):",
 "- A signed free agent can be made available for trade only after the first sim of the season. This does not apply to minimum-contract free agents.",
@@ -600,6 +641,7 @@ function normState(st){
   if(typeof st.recordsAt!=="string") st.recordsAt="";
   if(!Array.isArray(st.plog)) st.plog=[];
   if(!st.gpOpts||typeof st.gpOpts!=="object") st.gpOpts={};
+  if(!st.divs||typeof st.divs!=="object") st.divs={};
   if(!st.team||!st.team.id||!st.team.name) st.team={id:"t0",name:(st.seedVer&&st.players.some(function(p){return p.id==="s1";}))?"Dallas Mavericks":"My team"};
   if(!Array.isArray(st.others)) st.others=[];
   st.others=st.others.filter(function(o){return o&&o.name;});
@@ -694,6 +736,8 @@ function labels(){
 }
 function payOf(list,i){var t=0;list.forEach(function(p){t+=(p.sal[i]||0);});return t;}
 function payroll(i){return payOf(S.players,i);}
+/* payroll with team-option years left out. Player options still count as paid. */
+function payNoTO(list,i){var t=0;list.forEach(function(p){if(p.opt==="Team"&&isOptYear(p,i)) return; t+=(p.sal[i]||0);});return t;}
 function optIdxFromSeason(os){
   os=os==null?"":String(os).trim(); if(!os) return -1;
   var LL=labels(), oi=-1; for(var q=0;q<LL.length;q++){if(LL[q]===os||LL[q].indexOf(os)===0||String(LL[q]).slice(2)===os) oi=q;}
@@ -706,7 +750,7 @@ function optStart(p){
   var k=num(p.optIdx); if(k==null||k<0||k>li) return li;
   return Math.round(k);
 }
-function isOptYear(p,i){var o=optStart(p); return o>=0&&i>=o&&i<=lastIdx(p);}
+function isOptYear(p,i){var o=optStart(p); return o>=0&&i>=o&&i<=lastIdx(p)&&(p.sal[i]||0)>0;}
 function lastIdx(p){var l=-1;p.sal.forEach(function(v,i){if((v||0)>0)l=i;});return l;}
 function calc(){
   var set=S.settings, L=labels(), rows=[];
@@ -715,7 +759,7 @@ function calc(){
     S.players.forEach(function(p){
       if((p.sal[i]||0)>0){cnt++; if(!((p.sal[i+1]||0)>0)&&i<NY-1){exp+=p.sal[i];expN++;}}
     });
-    rows.push({label:L[i],pay:pay,space:set.cap-pay,taxRoom:set.tax-pay,apronRoom:set.apron-pay,floorGap:pay-set.floor,cnt:cnt,exp:exp,expN:expN});
+    rows.push({label:L[i],pay:pay,payNT:payNoTO(S.players,i),toAmt:pay-payNoTO(S.players,i),space:set.cap-pay,taxRoom:set.tax-pay,apronRoom:set.apron-pay,floorGap:pay-set.floor,cnt:cnt,exp:exp,expN:expN});
   }
   return rows;
 }
@@ -735,6 +779,7 @@ function renderSummary(){
   st.innerHTML='<div class="banner '+cls+'">'+msg+'</div>';
   var tiles=[
     ["Payroll "+esc(c.label), m(c.pay), c.cnt+" contracts and charges", ""],
+    ["Without team options", m(c.payNT), c.toAmt>0?"Team options: "+m(c.toAmt):"No team options in "+esc(c.label), ""],
     [c.space>=0?"Cap space":"Over the cap", m(Math.abs(c.space)), "Cap "+m(set.cap), c.space>=0?"pos":"neg"],
     ["Room to tax line", m(c.taxRoom), "Tax line "+m(set.tax), sgn(c.taxRoom)],
     ["Room to apron", m(c.apronRoom), "Apron "+m(set.apron), sgn(c.apronRoom)],
@@ -753,6 +798,9 @@ function renderSummary(){
   var h='<thead><tr><th>Season</th>'+R.map(function(r){return '<th>'+esc(r.label)+'</th>';}).join("")+'</tr></thead><tbody>';
   function row(name,fn,colour){h+='<tr><td>'+name+'</td>'+R.map(function(r){var v=fn(r);return '<td class="'+(colour?colour(v):"")+'">'+(typeof v==="number"?m(v):v)+'</td>';}).join("")+'</tr>';}
   row("Payroll",function(r){return r.pay;});
+  row("Payroll without team options",function(r){return r.payNT;});
+  row("Team option money in payroll",function(r){return r.toAmt>0?m(r.toAmt):"—";});
+  row("Cap space without team options",function(r){return set.cap-r.payNT;},sgn);
   row("Cap space (negative = over)",function(r){return r.space;},sgn);
   row("Room to tax line",function(r){return r.taxRoom;},sgn);
   row("Room to apron",function(r){return r.apronRoom;},sgn);
@@ -862,7 +910,7 @@ function renderLedger(){
       '<td class="x">'+(p.ex?'<span class="badge ex">example</span> ':"")+(p.shot?'<span class="badge check" id="b-'+id+'">'+(missingOf(p).length?'missing '+esc(missingOf(p).join(", ")):'check')+'</span> ':"")+'<button type="button" data-del="'+id+'" aria-label="Delete row">×</button></td></tr>';
   });
   if(!S.players.length) h+='<tr><td colspan="'+(NY+10)+'" class="muted" style="text-align:center;padding:18px">No contracts yet. Paste a screenshot or add a row.</td></tr>';
-  h+='</tbody><tfoot>'+[["pay","Team payroll"],["sp","Cap space"],["tx","Room to tax line"],["ap","Room to apron"],["n","Players paid"]].map(function(r){return '<tr><td colspan="6">'+r[1]+'</td>'+L.map(function(l,i){return '<td id="lf-'+r[0]+i+'"></td>';}).join("")+'<td colspan="4"></td></tr>';}).join("")+'</tfoot>';
+  h+='</tbody><tfoot>'+[["pay","Team payroll"],["nt","Payroll without team options"],["sp","Cap space"],["spn","Cap space without team options"],["tx","Room to tax line"],["ap","Room to apron"],["n","Players paid"]].map(function(r){return '<tr><td colspan="6">'+r[1]+'</td>'+L.map(function(l,i){return '<td id="lf-'+r[0]+i+'"></td>';}).join("")+'<td colspan="4"></td></tr>';}).join("")+'</tfoot>';
   $("ledger").innerHTML=h;
   renderLedgerFoot();
   var k=$("opt-key"); if(k) k.hidden=!S.players.some(function(p){return p.opt==="Player"||p.opt==="Team";});
@@ -874,6 +922,9 @@ function renderLedgerFoot(){
     var pay=payroll(i), n=S.players.filter(function(p){return (p.sal[i]||0)>0;}).length;
     function put(id,txt,cls){var el=$(id); if(el){el.textContent=txt; el.className=cls||"";}}
     put("lf-pay"+i,m(pay),pay>set.apron?"neg":pay>set.tax?"mid":"");
+    var pnt=payNoTO(S.players,i);
+    put("lf-nt"+i,m(pnt),pnt>set.apron?"neg":pnt>set.tax?"mid":"");
+    put("lf-spn"+i,m(set.cap-pnt),sgn(set.cap-pnt));
     put("lf-sp"+i,m(set.cap-pay),sgn(set.cap-pay));
     put("lf-tx"+i,m(set.tax-pay),sgn(set.tax-pay));
     put("lf-ap"+i,m(set.apron-pay),sgn(set.apron-pay));
@@ -1473,7 +1524,7 @@ function renderPreview(){
     if(plrs.length){
       h+='<div class="scroll"><table class="ytable"><thead><tr><th class="l">Player</th><th>Pos</th><th>Age</th><th>OVR (base)</th>'+L.map(function(l){return '<th>'+esc(l)+'</th>';}).join("")+'<th class="l">Option</th><th class="l">Compared with the team now</th></tr></thead><tbody>'+plrs.map(function(r){
         var ex=T.d?T.d.players.filter(function(p){return (p.name||"").toLowerCase()===String(r&&r.name||"").trim().toLowerCase();})[0]:null, ch=ex?diffPlayer(ex,r):[], sal=Array.isArray(r.salaries)?r.salaries:[];
-        return '<tr><td class="l">'+esc(r&&r.name||"(no name)")+'</td><td>'+esc(r&&r.pos||"")+'</td><td>'+esc(r&&r.age!=null?r.age:"")+'</td><td>'+esc(baseOvr(r)==null?"":baseOvr(r))+(num(r&&r.ovrChange)!=null?' <span class="muted">(shown '+esc(num(r.ovr))+', '+(num(r.ovrChange)>0?"+":"")+esc(num(r.ovrChange))+' removed)</span>':(r&&r.ovrArrow?' <span class="pill warn">arrow, amount unread</span>':""))+'</td>'+L.map(function(l,k){var oc=(r&&(r.option==="Team"||r.option==="Player")&&(function(){var oi=optIdxFromSeason(r.option_season); if(oi<0){var last=-1; sal.forEach(function(v,q){if(num(v)>0) last=q;}); oi=last;} return oi>=0&&k>=oi;})())?(r.option==="Player"?" opt-p":" opt-t"):""; return '<td class="'+oc.trim()+'">'+(num(sal[k])!=null?esc(num(sal[k])):"–")+'</td>';}).join("")+'<td class="l">'+(r&&(r.option==="Team"||r.option==="Player")?'<span class="pill '+(r.option==="Player"?"opt-p":"opt-t")+'">'+esc(r.option)+(optIdxFromSeason(r.option_season)>=0?' from '+esc(L[optIdxFromSeason(r.option_season)]):' (season not read)')+'</span>':'—')+'</td><td class="l">'+(!ex?'<span class="pill ok">new</span>':ch.length?'<span class="pill warn">changes</span> '+esc(ch.join(", ")):'<span class="pill na">same</span>')+'</td></tr>';
+        return '<tr><td class="l">'+esc(r&&r.name||"(no name)")+'</td><td>'+esc(r&&r.pos||"")+'</td><td>'+esc(r&&r.age!=null?r.age:"")+'</td><td>'+esc(baseOvr(r)==null?"":baseOvr(r))+(num(r&&r.ovrChange)!=null?' <span class="muted">(shown '+esc(num(r.ovr))+', '+(num(r.ovrChange)>0?"+":"")+esc(num(r.ovrChange))+' removed)</span>':(r&&r.ovrArrow?' <span class="pill warn">arrow, amount unread</span>':""))+'</td>'+L.map(function(l,k){var oc=(r&&(r.option==="Team"||r.option==="Player")&&(function(){var last=-1; sal.forEach(function(v,q){if(num(v)>0) last=q;}); var oi=optIdxFromSeason(r.option_season); if(oi<0||oi>last) oi=last; return oi>=0&&k>=oi&&k<=last&&num(sal[k])>0;})())?(r.option==="Player"?" opt-p":" opt-t"):""; return '<td class="'+oc.trim()+'">'+(num(sal[k])!=null?esc(num(sal[k])):"–")+'</td>';}).join("")+'<td class="l">'+(r&&(r.option==="Team"||r.option==="Player")?'<span class="pill '+(r.option==="Player"?"opt-p":"opt-t")+'">'+esc(r.option)+(optIdxFromSeason(r.option_season)>=0?' from '+esc(L[optIdxFromSeason(r.option_season)]):' (season not read)')+'</span>':'—')+'</td><td class="l">'+(!ex?'<span class="pill ok">new</span>':ch.length?'<span class="pill warn">changes</span> '+esc(ch.join(", ")):'<span class="pill na">same</span>')+'</td></tr>';
       }).join("")+'</tbody></table></div>';
     }
     if(picks.length) h+='<p class="src" style="margin-top:8px"><strong>Picks:</strong> '+picks.map(function(p){return esc((p.year==null?"?":p.year)+" R"+(p.round==null?"?":p.round)+" "+(p.team||"?")+(p.top_protected?" · top "+p.top_protected+" protected":p.protection?" · "+p.protection:"")+(p.swap?" · swap"+(p.swap_with?" with "+p.swap_with:""):""));}).join("; ")+'</p>';
@@ -1646,17 +1697,19 @@ function importJSON(file){
 
 /* ---------- tabs ---------- */
 function showTab(){
-  var h=(location.hash||"").replace("#",""); if(!TABS.some(function(t){return t[0]===h;})) h="cap";
+  var h=(location.hash||"").replace("#",""); if(!TABS.some(function(t){return t[0]===h;})) h="home";
   Array.prototype.forEach.call(document.querySelectorAll("[data-tab]"),function(el){el.hidden=el.getAttribute("data-tab")!==h;});
   Array.prototype.forEach.call(document.querySelectorAll("#tabs a"),function(a){if(a.getAttribute("data-t")===h) a.setAttribute("aria-current","page"); else a.removeAttribute("aria-current");});
 }
+var TAB_GROUPS=[["Start",["home"]],["League",["teams","standings","top","players","audit"]],["My team",["cap","roster","rotation","gameplan","picks","development","scenarios"]],["Tools",["parse","deals","league"]]];
 function renderTabs(){
-  $("tabs").innerHTML=TABS.map(function(t){return '<a href="#'+t[0]+'" data-t="'+t[0]+'">'+t[1]+'</a>';}).join("");
+  var lab={}; TABS.forEach(function(t){lab[t[0]]=t[1];});
+  $("tabs").innerHTML=TAB_GROUPS.map(function(g){return '<div class="tgrp"><span class="tg-l">'+g[0]+'</span><div class="tg-r">'+g[1].map(function(k){return '<a href="#'+k+'" data-t="'+k+'">'+esc(lab[k])+'</a>';}).join("")+'</div></div>';}).join("");
   $("tabs").addEventListener("click",function(e){
     var a=e.target.closest&&e.target.closest("a"); if(!a) return; e.preventDefault();
     try{location.hash=a.getAttribute("data-t");}catch(x){} showTab();
   });
-  window.addEventListener("hashchange",showTab);
+  window.addEventListener("hashchange",function(){showTab(); try{if(!/jsdom/i.test(navigator.userAgent)) window.scrollTo(0,0);}catch(x){}});
   showTab();
 }
 
@@ -1681,7 +1734,7 @@ function teamRow(id,name,list,active){
     if(p.kind==="Contract"&&p.ovr!=null&&(!top||p.ovr>top.ovr)) top=p;
   });
   var n=list.filter(function(p){return (p.sal[0]||0)>0;}).length;
-  return {id:id,name:name,active:active,n:n,empty:!list.length,pay:pay,space:set.cap-pay,taxRoom:set.tax-pay,exp:exp,top:top};
+  return {id:id,name:name,active:active,n:n,empty:!list.length,pay:pay,payNT:payNoTO(list,0),space:set.cap-pay,taxRoom:set.tax-pay,exp:exp,top:top};
 }
 function allTeams(){
   var rows=[teamRow(S.team.id,S.team.name,S.players,true)];
@@ -1707,11 +1760,11 @@ function picksHtml(list){
 function renderTeams(){
   var L=labels();
   var rows=allTeams().sort(function(a,b){return (a.empty-b.empty)||(b.space-a.space);});
-  var h='<thead><tr><th class="l">Team</th><th>Players</th><th>Payroll '+esc(L[0])+'</th><th>Cap space</th><th>Room to tax line</th><th>Expiring after</th><th class="l">Best player</th><th class="l">Draft picks</th><th class="l">Last updated</th><th></th></tr></thead><tbody>';
+  var h='<thead><tr><th class="l">Team</th><th>Players</th><th>Payroll '+esc(L[0])+'</th><th>Without team options</th><th>Cap space</th><th>Room to tax line</th><th>Expiring after</th><th class="l">Best player</th><th class="l">Draft picks</th><th class="l">Last updated</th><th></th></tr></thead><tbody>';
   rows.forEach(function(r){
     h+='<tr><td class="l"><strong>'+esc(r.name)+'</strong>'+(r.active?' <span class="badge ex">open</span>':'')+(r.empty?' <span class="badge">no data</span>':'')+'</td>'+
-      (r.empty?'<td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td class="l">—</td>':
-      '<td>'+r.n+'</td><td>'+m(r.pay)+'</td><td class="'+sgn(r.space)+'">'+m(r.space)+'</td><td class="'+sgn(r.taxRoom)+'">'+m(r.taxRoom)+'</td><td>'+(r.exp?m(r.exp):"—")+'</td><td class="l">'+(r.top?esc(r.top.name||"Unnamed")+' <span class="muted">'+r.top.ovr+' OVR</span>':"—")+'</td>')+
+      (r.empty?'<td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td class="l">—</td>':
+      '<td>'+r.n+'</td><td>'+m(r.pay)+'</td><td>'+m(r.payNT)+'</td><td class="'+sgn(r.space)+'">'+m(r.space)+'</td><td class="'+sgn(r.taxRoom)+'">'+m(r.taxRoom)+'</td><td>'+(r.exp?m(r.exp):"—")+'</td><td class="l">'+(r.top?esc(r.top.name||"Unnamed")+' <span class="muted">'+r.top.ovr+' OVR</span>':"—")+'</td>')+
       '<td class="l">'+picksHtml(r.picks)+'</td>'+
       '<td class="l" style="font-size:12px;line-height:1.5">'+updHtml(r.id)+'</td>'+
       '<td>'+(r.active?"":'<button type="button" data-open="'+esc(r.id)+'">Open</button> <button type="button" data-tdel="'+esc(r.id)+'" aria-label="Delete '+esc(r.name)+'">×</button>')+'</td></tr>';
@@ -2237,14 +2290,80 @@ function onGPList(e){
 }
 
 /* ---------- STANDINGS AND LOTTERY ---------- */
+/* ---------- conferences and divisions ---------- */
+var DIVS=[["Atlantic","East"],["Central","East"],["Southeast","East"],["Northwest","West"],["Pacific","West"],["Southwest","West"]];
+var DIV_KEYS={
+  Atlantic:[["boston","brooklyn","new york","philadelphia","toronto","new jersey"],["celtics","nets","knicks","76ers","sixers","raptors"]],
+  Central:[["chicago","cleveland","detroit","indiana","indianapolis","milwaukee"],["bulls","cavaliers","cavs","pistons","pacers","bucks"]],
+  Southeast:[["atlanta","charlotte","miami","orlando","washington"],["hawks","hornets","bobcats","heat","magic","wizards"]],
+  Northwest:[["denver","minnesota","oklahoma city","portland","utah"],["nuggets","timberwolves","wolves","thunder","trail blazers","blazers","jazz"]],
+  Pacific:[["golden state","phoenix","sacramento","seattle"],["warriors","clippers","lakers","suns","kings","supersonics","sonics"]],
+  Southwest:[["dallas","houston","memphis","new orleans","san antonio","vancouver"],["mavericks","mavs","rockets","grizzlies","pelicans","spurs"]]
+};
+function guessDiv(name){
+  var s=" "+String(name||"").toLowerCase().replace(/[^a-z0-9]+/g," ")+" ";
+  for(var pass=0;pass<2;pass++) for(var i=0;i<DIVS.length;i++){
+    var ks=DIV_KEYS[DIVS[i][0]][pass];
+    for(var j=0;j<ks.length;j++) if(s.indexOf(" "+ks[j]+" ")>=0) return DIVS[i][0];
+  }
+  return "";
+}
+function confOfDiv(d){for(var i=0;i<DIVS.length;i++) if(DIVS[i][0]===d) return DIVS[i][1]; return "";}
+function divOf(id,name){var v=S.divs&&S.divs[id]; if(v&&confOfDiv(v)) return v; return guessDiv(name);}
+function ordinal(n){var v=n%100, x=["th","st","nd","rd"]; return n+(x[(v-20)%10]||x[v]||x[0]);}
+function standRows(){
+  var rows=allTeams().map(function(r){
+    var rc=recOf(r.id), gp=(rc.w||0)+(rc.l||0), dv=divOf(r.id,r.name);
+    return {id:r.id,name:r.name,active:r.active,w:rc.w||0,l:rc.l||0,gp:gp,has:gp>0,pct:gp?(rc.w||0)/gp:0,div:dv,conf:confOfDiv(dv)};
+  });
+  rows.sort(function(a,b){return ((b.has?1:0)-(a.has?1:0))||(b.pct-a.pct)||(b.w-a.w)||a.name.localeCompare(b.name);});
+  rows.forEach(function(r,i){r.rank=r.has?i+1:null;});
+  ["conf","div"].forEach(function(k){var c={}; rows.forEach(function(r){if(!r[k]) return; c[r[k]]=(c[r[k]]||0)+1; if(r.has) r[k+"Rank"]=c[r[k]];});});
+  return rows;
+}
+function stTable(rows,o){
+  o=o||{};
+  if(!rows.length) return '<p class="muted">No teams here yet.</p>';
+  var lead=null; rows.forEach(function(r){if(!lead&&r.has) lead=r;});
+  var h='<div class="scroll"><table class="ytable"><thead><tr><th>#</th><th class="l">Team</th>'+(o.conf?'<th class="l">Conf.</th>':'')+(o.div?'<th class="l">Division</th>':'')+'<th>W</th><th>L</th><th>PCT</th><th>GB</th></tr></thead><tbody>';
+  rows.forEach(function(r,i){
+    var gb=lead&&r.has?((lead.w-r.w)+(r.l-lead.l))/2:null;
+    h+='<tr'+(r.active?' class="me"':'')+'><td>'+(r.has?(i+1):"—")+'</td><td class="l">'+esc(r.name)+(r.active?' <span class="badge ex">open</span>':'')+'</td>'+(o.conf?'<td class="l">'+esc(r.conf||"—")+'</td>':'')+(o.div?'<td class="l">'+esc(r.div||"—")+'</td>':'')+
+      (r.has?'<td>'+r.w+'</td><td>'+r.l+'</td><td>'+(r.w===r.gp?"1.000":(r.w/r.gp).toFixed(3).replace(/^0/,""))+'</td><td>'+(gb==null?"—":gb.toFixed(1))+'</td>':'<td>—</td><td>—</td><td>—</td><td>—</td>')+'</tr>';
+  });
+  return h+'</tbody></table></div>';
+}
+function renderStandView(){
+  var box=$("st-view"); if(!box) return;
+  var all=standRows(), un=all.filter(function(r){return !r.conf;});
+  var h='<div class="panel"><h3 class="sub-h">Overall</h3>'+stTable(all,{conf:true,div:true})+'</div>';
+  h+='<div class="cols">'+["East","West"].map(function(c){
+    return '<div class="panel"><h3 class="sub-h">'+(c==="East"?"Eastern":"Western")+' Conference</h3>'+stTable(all.filter(function(r){return r.conf===c;}),{div:true})+'</div>';
+  }).join("")+'</div>';
+  h+='<div class="sdiv">'+DIVS.map(function(d){
+    return '<div class="panel"><h3 class="sub-h">'+d[0]+' Division <span class="muted">('+d[1]+')</span></h3>'+stTable(all.filter(function(r){return r.div===d[0];}),{})+'</div>';
+  }).join("")+'</div>';
+  if(un.length) h+='<div class="banner warn"><strong>'+un.length+' team'+(un.length>1?"s have":" has")+' no division yet:</strong> '+un.map(function(r){return esc(r.name);}).join(", ")+'. Pick one in the Division menu in the table below. They still appear in the Overall table.</div>';
+  box.innerHTML=h;
+}
+function standTxt(id){
+  var r=standRows().filter(function(x){return x.id===id;})[0]; if(!r) return "";
+  if(!r.div) return '<p class="src">No division set. Choose one on the Standings tab.</p>';
+  return '<p class="src">'+esc(r.div)+' Division, '+esc(r.conf)+'ern Conference'+(r.has?' · '+ordinal(r.divRank)+' in the division, '+ordinal(r.confRank)+' in the conference, '+ordinal(r.rank)+' overall':'')+'</p>';
+}
 function recOf(id){var r=S.records[id]||{}; return {w:num(r.w),l:num(r.l)};}
+function divSel(r){
+  var g=guessDiv(r.name), cur=S.divs[r.id]&&confOfDiv(S.divs[r.id])?S.divs[r.id]:"";
+  return '<select data-div="'+esc(r.id)+'" aria-label="Division for '+esc(r.name)+'"><option value=""'+(cur?"":" selected")+'>Automatic: '+esc(g||"none found")+'</option>'+DIVS.map(function(d){return '<option value="'+d[0]+'"'+(cur===d[0]?" selected":"")+'>'+d[0]+' ('+d[1]+')</option>';}).join("")+'</select>';
+}
 function renderStandings(){
   var rows=allTeams().sort(byname);
-  var h='<thead><tr><th class="l">Team</th><th>Wins</th><th>Losses</th><th>Win %</th></tr></thead><tbody>'+rows.map(function(r){
+  var h='<thead><tr><th class="l">Team</th><th class="l">Division</th><th>Wins</th><th>Losses</th><th>Win %</th></tr></thead><tbody>'+rows.map(function(r){
     var rc=recOf(r.id), gp=(rc.w||0)+(rc.l||0);
-    return '<tr><td class="l"><strong>'+esc(r.name)+'</strong>'+(r.active?' <span class="badge ex">open</span>':'')+'</td><td><input id="rw-'+esc(r.id)+'" data-rec="'+esc(r.id)+':w" type="number" min="0" step="1" value="'+esc(rc.w==null?"":rc.w)+'" style="width:80px" aria-label="Wins"></td><td><input id="rl-'+esc(r.id)+'" data-rec="'+esc(r.id)+':l" type="number" min="0" step="1" value="'+esc(rc.l==null?"":rc.l)+'" style="width:80px" aria-label="Losses"></td><td id="wp-'+esc(r.id)+'">'+(gp?(rc.w/gp).toFixed(3):"—")+'</td></tr>';
+    return '<tr><td class="l"><strong>'+esc(r.name)+'</strong>'+(r.active?' <span class="badge ex">open</span>':'')+'</td><td class="l">'+divSel(r)+'</td><td><input id="rw-'+esc(r.id)+'" data-rec="'+esc(r.id)+':w" type="number" min="0" step="1" value="'+esc(rc.w==null?"":rc.w)+'" style="width:80px" aria-label="Wins"></td><td><input id="rl-'+esc(r.id)+'" data-rec="'+esc(r.id)+':l" type="number" min="0" step="1" value="'+esc(rc.l==null?"":rc.l)+'" style="width:80px" aria-label="Losses"></td><td id="wp-'+esc(r.id)+'">'+(gp?(rc.w/gp).toFixed(3):"—")+'</td></tr>';
   }).join("")+'</tbody>';
   $("st-tbl").innerHTML=h;
+  renderStandView();
   renderLottery();
 }
 function lotteryCalc(){
@@ -2319,11 +2438,13 @@ function renderLottery(){
   mine.innerHTML=mp.length?'<div class="panel" style="margin-bottom:14px"><h3 class="sub-h">First-round picks of '+esc(S.team.name)+' for the '+esc(draft)+' draft, with swaps and protection</h3><ul class="list">'+mp.join("")+'</ul><p class="src" style="margin-top:6px">Protection means the holder only receives the pick if it lands outside the top N. With a swap, the holder gets the better of the two teams\' picks first, then protection is checked on that result. The odds assume the lottery settings on the League tab.</p></div>':'';
 }
 function onRecord(e){
+  var dv=e.target.getAttribute&&e.target.getAttribute("data-div");
+  if(dv){ if(e.target.value&&confOfDiv(e.target.value)) S.divs[dv]=e.target.value; else delete S.divs[dv]; save(); renderStandView(); renderProfile(); renderHome(); return; }
   var k=e.target.getAttribute&&e.target.getAttribute("data-rec"); if(!k) return;
   var a=k.split(":"), r=S.records[a[0]]=S.records[a[0]]||{}, v=num(e.target.value);
   r[a[1]]=v==null?null:Math.max(0,Math.round(v)); r.at=new Date().toISOString(); S.recordsAt=r.at;
   var gp=(r.w||0)+(r.l||0), cell=$("wp-"+a[0]); if(cell) cell.textContent=gp?((r.w||0)/gp).toFixed(3):"—";
-  save(); renderLottery();
+  save(); renderStandView(); renderLottery(); renderHome();
 }
 
 /* ---------- LEAGUE AUDIT ---------- */
@@ -2401,10 +2522,10 @@ function renderProfile(){
   h+='<div class="panel"><h3 class="sub-h">Payroll by season</h3>';
   if(!d.players.length) h+='<p class="muted">No roster entered for this team.</p>';
   else{
-    h+='<div class="scroll"><table class="ytable"><thead><tr><th class="l">Season</th><th>Payroll</th><th>Cap space</th><th>Room to tax</th><th>Room to apron</th><th>Players paid</th></tr></thead><tbody>';
+    h+='<div class="scroll"><table class="ytable"><thead><tr><th class="l">Season</th><th>Payroll</th><th>Without team options</th><th>Cap space</th><th>Room to tax</th><th>Room to apron</th><th>Players paid</th></tr></thead><tbody>';
     L.forEach(function(l,i){
       var pay=payOf(d.players,i), n=d.players.filter(function(p){return (p.sal[i]||0)>0;}).length;
-      h+='<tr><td class="l">'+esc(l)+'</td><td class="'+(pay>set.apron?"neg":pay>set.tax?"mid":"")+'"><strong>'+m(pay)+'</strong></td><td class="'+sgn(set.cap-pay)+'">'+m(set.cap-pay)+'</td><td class="'+sgn(set.tax-pay)+'">'+m(set.tax-pay)+'</td><td class="'+sgn(set.apron-pay)+'">'+m(set.apron-pay)+'</td><td>'+n+'</td></tr>';
+      h+='<tr><td class="l">'+esc(l)+'</td><td class="'+(pay>set.apron?"neg":pay>set.tax?"mid":"")+'"><strong>'+m(pay)+'</strong></td><td>'+m(payNoTO(d.players,i))+'</td><td class="'+sgn(set.cap-pay)+'">'+m(set.cap-pay)+'</td><td class="'+sgn(set.tax-pay)+'">'+m(set.tax-pay)+'</td><td class="'+sgn(set.apron-pay)+'">'+m(set.apron-pay)+'</td><td>'+n+'</td></tr>';
     });
     h+='</tbody></table></div>';
   }
@@ -2424,7 +2545,7 @@ function renderProfile(){
   var top=list.slice().sort(function(a,b){return (b.sal[0]||0)-(a.sal[0]||0);}).slice(0,5).filter(function(p){return (p.sal[0]||0)>0;});
   h+='<div class="panel"><h3 class="sub-h">Biggest contracts, '+esc(L[0])+'</h3>'+(top.length?'<ul class="list">'+top.map(function(p){return '<li><span class="a">'+pname(p)+' <span class="muted">'+esc(p.pos||"")+(p.ovr!=null?" · "+p.ovr+" OVR":"")+' · ends '+esc(L[lastIdx(p)]||"?")+'</span></span><span class="b">'+m(p.sal[0])+'</span></li>';}).join("")+'</ul>':'<p class="muted">None.</p>')+'</div>';
   h+='<div class="panel"><h3 class="sub-h">Draft picks</h3>'+picksHtml(d.picks).replace("<details>","<details open>")+'</div>';
-  h+='<div class="panel"><h3 class="sub-h">Record</h3>'+(rc.w!=null||rc.l!=null?'<p><strong>'+(rc.w||0)+'-'+(rc.l||0)+'</strong> <span class="muted">updated '+esc(fmtAt(u.stand))+'</span></p>':'<p class="muted">No record entered. Add it on the Standings tab.</p>')+'</div>';
+  h+='<div class="panel"><h3 class="sub-h">Record</h3>'+(rc.w!=null||rc.l!=null?'<p><strong>'+(rc.w||0)+'-'+(rc.l||0)+'</strong> <span class="muted">updated '+esc(fmtAt(u.stand))+'</span></p>':'<p class="muted">No record entered. Add it on the Standings tab.</p>')+standTxt(prof.id)+'</div>';
   h+='<div class="panel"><h3 class="sub-h">Team stats</h3><p class="src" id="prof-statsat">Updated: '+esc(fmtAt(u.stats))+'</p><div id="prof-stats">'+statsEditor(d.tstats,"ts",TEAM_PRESETS,"ts")+'</div></div>';
   h+='<div class="panel"><h3 class="sub-h">Last updated</h3><p class="src" style="line-height:1.8">'+updHtml(prof.id)+'</p>'+(t.id===S.team.id?'':'<div class="toolbar" style="margin-top:8px"><button type="button" data-popen="'+esc(t.id)+'">Open this team</button></div>')+'</div>';
   h+='</div>';
@@ -2464,7 +2585,7 @@ function renderTop(){
   if(!teamRows.length) h+='<p class="muted">No team has a roster yet.</p>';
   else h+='<div class="panel scroll"><table class="ytable"><thead><tr><th class="l">Team</th>'+L.map(function(l){return '<th>'+esc(l)+'</th>';}).join("")+'</tr></thead><tbody>'+teamRows.map(function(r){
     var d=tdata(r.id).d;
-    return '<tr><td class="l"><strong>'+esc(r.name)+'</strong></td>'+L.map(function(l,i){var pay=payOf(d.players,i); return '<td class="'+(pay>set.apron?"neg":pay>set.tax?"mid":"")+'">'+m(pay)+'<br><span class="muted" style="font-size:11px">space '+m(set.cap-pay)+'</span></td>';}).join("")+'</tr>';
+    return '<tr><td class="l"><strong>'+esc(r.name)+'</strong></td>'+L.map(function(l,i){var pay=payOf(d.players,i); return '<td class="'+(pay>set.apron?"neg":pay>set.tax?"mid":"")+'">'+m(pay)+'<br><span class="muted" style="font-size:11px">space '+m(set.cap-pay)+'</span>'+(payNoTO(d.players,i)!==pay?'<br><span class="muted" style="font-size:11px">no team opt. '+m(payNoTO(d.players,i))+'</span>':'')+'</td>';}).join("")+'</tr>';
   }).join("")+'</tbody></table></div><p class="src" style="margin-top:6px">Red is over the apron, amber is over the tax line.</p>';
   h+='<h3 class="sub-h" style="margin-top:18px">Contracts ending, by season</h3><p class="src">Expiring means the last season with a salary. A player with an option is listed apart, in the season the option starts, because the option decides whether he stays.</p>';
   var any=false;
@@ -2538,8 +2659,125 @@ function onGPOpts(e){
   var dl=$("dl-"+k); if(dl) dl.innerHTML=lines.map(function(o){return '<option value="'+esc(o)+'">';}).join("");
 }
 
+/* ---------- click-to-sort on every table ---------- */
+var sortSt={}, sortBusy=false, sortObs=null, sortTimer=null;
+function tblKey(t){
+  if(t.id) return t.id;
+  var pane=t.closest("[data-tab]"), all=(pane||document).querySelectorAll("table");
+  return (pane?pane.getAttribute("data-tab"):"x")+"#"+Array.prototype.indexOf.call(all,t);
+}
+function sortable(t){
+  if(!t.tHead||t.tHead.rows.length!==1||!t.tBodies.length) return false;
+  var b=t.tBodies[0], n=t.tHead.rows[0].cells.length; if(!b.rows.length) return false;
+  for(var i=0;i<b.rows.length;i++){
+    if(b.rows[i].cells.length!==n||b.rows[i].querySelector("[colspan],[rowspan]")) return false;
+  }
+  return true;
+}
+function cellText(td){
+  var el=td.querySelector("input,select,textarea");
+  if(el){
+    if(el.tagName==="SELECT") return (el.options[el.selectedIndex]||{}).text||"";
+    if(el.type==="checkbox") return el.checked?"1":"0";
+    return el.value;
+  }
+  return td.textContent;
+}
+function sortKey(s){
+  s=String(s).replace(/\s+/g," ").trim();
+  if(!s||/^[\u2014\u2013-]$/.test(s)||/^(not recorded|none entered|no data)$/i.test(s)) return {e:1};
+  var d=s.match(/^(\d{1,2}) ([A-Za-z]{3}) (\d{4}), (\d\d):(\d\d)/);
+  if(d){var t=Date.parse(d[1]+" "+d[2]+" "+d[3]+" "+d[4]+":"+d[5]); if(isFinite(t)) return {n:t,s:s.toLowerCase()};}
+  var n=s.match(/^[-\u2212]?\s*\$?\s*[-\u2212]?(\d[\d,]*(\.\d+)?|\.\d+)/);
+  if(n){var v=parseFloat(n[0].replace(/\u2212/g,"-").replace(/[$,\s]/g,"")); if(isFinite(v)) return {n:v,s:s.toLowerCase()};}
+  return {s:s.toLowerCase()};
+}
+function applySort(t){
+  var k=tblKey(t), st=sortSt[k], ths=t.tHead.rows[0].cells;
+  Array.prototype.forEach.call(ths,function(th,i){
+    if(st&&st.c===i) th.setAttribute("aria-sort",st.d>0?"ascending":"descending"); else if(th.hasAttribute("aria-sort")) th.removeAttribute("aria-sort");
+  });
+  if(!st) return;
+  var b=t.tBodies[0], rows=Array.prototype.slice.call(b.rows);
+  if(st.c>=ths.length) return;
+  if(b.contains(document.activeElement)) return;
+  var keys=rows.map(function(r){return sortKey(cellText(r.cells[st.c]));});
+  var numeric=keys.every(function(x){return x.e||x.n!=null;});
+  var idx=rows.map(function(_,i){return i;});
+  idx.sort(function(a,b2){
+    var x=keys[a], y=keys[b2];
+    if(x.e||y.e) return x.e&&y.e?a-b2:(x.e?1:-1);
+    var c=numeric?x.n-y.n:x.s.localeCompare(y.s,undefined,{numeric:true,sensitivity:"base"});
+    return c?c*st.d:a-b2;
+  });
+  if(idx.some(function(v,i){return v!==i;})) idx.forEach(function(i){b.appendChild(rows[i]);});
+}
+function sortPass(){
+  if(sortBusy) return; sortBusy=true;
+  try{
+    Array.prototype.forEach.call(document.querySelectorAll("table.ytable,table.ledger"),function(t){
+      if(!sortable(t)) return;
+      Array.prototype.forEach.call(t.tHead.rows[0].cells,function(th){if(th.textContent.trim()&&!th.hasAttribute("tabindex")){th.setAttribute("tabindex","0");th.setAttribute("title",th.getAttribute("title")||"Click to sort. Click again to reverse.");}});
+      applySort(t);
+    });
+  }catch(x){}
+  if(sortObs) sortObs.takeRecords();
+  sortBusy=false;
+}
+function onSortClick(e){
+  var th=e.target.closest&&e.target.closest("th"); if(!th||!th.hasAttribute("tabindex")) return;
+  var t=th.closest("table"); if(!t||!t.tHead||!t.tHead.contains(th)||!sortable(t)) return;
+  var c=Array.prototype.indexOf.call(t.tHead.rows[0].cells,th), k=tblKey(t), cur=sortSt[k];
+  sortSt[k]={c:c,d:cur&&cur.c===c?-cur.d:1};
+  sortBusy=false; applySortNow(t);
+}
+function applySortNow(t){sortBusy=true; try{applySort(t);}catch(x){} if(sortObs) sortObs.takeRecords(); sortBusy=false;}
+function initSort(){
+  document.addEventListener("click",onSortClick);
+  document.addEventListener("keydown",function(e){if((e.key==="Enter"||e.key===" ")&&e.target&&e.target.tagName==="TH"&&e.target.hasAttribute("tabindex")){e.preventDefault();onSortClick(e);}});
+  if(window.MutationObserver){
+    sortObs=new MutationObserver(function(){if(sortBusy) return; clearTimeout(sortTimer); sortTimer=setTimeout(sortPass,30);});
+    sortObs.observe(document.body,{childList:true,subtree:true});
+  }
+  sortPass();
+}
+
+/* ---------- HOME ---------- */
+var HOME_ACTIONS=[["parse","Feed data","Paste screenshots of rosters, standings, picks and stats, or paste a trade."],["teams","Teams","Compare every team's payroll, picks and cap space."],["standings","Standings","Overall, conference and division tables."],["top","Top contracts","Biggest contracts in the league and when they end."],["players","Players","One player: contract, stats and attributes."],["cap","My cap","Payroll against the cap, tax and apron lines."],["deals","Trades","Build and check a trade between up to four teams."],["picks","Picks","Your picks, swaps and protections."]];
+function renderHome(){
+  var box=$("home-box"); if(!box) return;
+  var L=labels(), R=calc(), c=R[0], teams=allTeams(), n=teams.length, stand=standRows();
+  var me=stand.filter(function(r){return r.id===S.team.id;})[0];
+  var own=(S.picks||[]).filter(function(p){return p.status!=="Traded away";});
+  var r1=own.filter(function(p){return String(p.round)==="1";}).length, r2=own.filter(function(p){return String(p.round)==="2";}).length;
+  var h='<div class="panel hero"><div><p class="src">Welcome back</p><p class="hero-t">'+esc(S.team.name)+'</p><p class="muted">'+esc(L[0])+' season · '+n+' team'+(n===1?"":"s")+' in the file · '+esc(new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}))+'</p></div><div class="toolbar"><a class="btn" href="#parse">Feed data</a><a class="btn" href="#cap">Open the cap picture</a></div></div>';
+  var st=$("status"); if(st&&st.innerHTML) h+=st.innerHTML;
+  var recTile=me&&me.has?[me.w+"-"+me.l,(me.conf?ordinal(me.confRank)+" in the "+me.conf+"ern Conference":"No conference set")]:["—","No record entered"];
+  var tiles=[["Payroll "+esc(L[0]),m(c.pay),c.cnt+" contracts and charges"],[c.space>=0?"Cap space":"Over the cap",m(Math.abs(c.space)),"Cap "+m(S.settings.cap)],["Without team options",m(c.payNT),c.toAmt>0?"Team options "+m(c.toAmt):"No team options"],["Record",recTile[0],recTile[1]],["Draft picks",String(own.length),r1+" first-round, "+r2+" second-round"]];
+  h+='<div class="tiles">'+tiles.map(function(t){return '<div class="tile"><div class="k">'+t[0]+'</div><div class="v">'+t[1]+'</div><div class="n">'+t[2]+'</div></div>';}).join("")+'</div>';
+  h+='<div><h3 class="sub-h">What do you want to do?</h3><div class="actions">'+HOME_ACTIONS.map(function(a){return '<a class="card" href="#'+a[0]+'"><strong>'+esc(a[1])+'</strong><span>'+esc(a[2])+'</span></a>';}).join("")+'</div></div>';
+  var snap;
+  if(me&&me.conf&&stand.some(function(r){return r.has;})){
+    var cr=stand.filter(function(r){return r.conf===me.conf;}); snap='<h3 class="sub-h">'+(me.conf==="East"?"Eastern":"Western")+' Conference, top 8</h3>'+stTable(cr.slice(0,8),{})+(me.has&&me.confRank>8?'<p class="src">'+esc(S.team.name)+' is '+ordinal(me.confRank)+'.</p>':'')+'<p class="src"><a href="#standings">Full standings</a></p>';
+  } else snap='<h3 class="sub-h">Standings</h3><p class="muted">No records yet. Paste a standings screenshot on the Parsing tab or type the records on the Standings tab.</p>';
+  function chk(label,bad){return bad.length?'<li><details><summary>'+esc(label)+': '+bad.length+' of '+n+' teams need attention</summary><div class="names">'+bad.map(esc).join(", ")+'</div></details></li>':'<li class="ok">✓ '+esc(label)+': all '+n+' teams</li>';}
+  function names(f){return teams.filter(f).map(function(r){return r.name;}).sort();}
+  var week=7*864e5, now=Date.now();
+  var health='<h3 class="sub-h">Data check</h3><ul class="chk-list">'+
+    chk("Roster entered",names(function(r){return r.empty;}))+
+    chk("Draft picks entered",names(function(r){return !(r.picks||[]).length;}))+
+    chk("Record entered",stand.filter(function(r){return !r.has;}).map(function(r){return r.name;}).sort())+
+    chk("Division set",stand.filter(function(r){return !r.div;}).map(function(r){return r.name;}).sort())+
+    chk("Roster updated in the last 7 days",names(function(r){var t=Date.parse(updOf(r.id).roster); return !r.empty&&isFinite(t)&&now-t>week;}))+'</ul>';
+  h+='<div class="cols"><div class="panel">'+snap+'</div><div class="panel">'+health+'</div></div>';
+  var recent=S.plog.slice().reverse().slice(0,5);
+  h+='<div class="cols"><div class="panel"><h3 class="sub-h">Recent activity</h3>'+(recent.length?'<ul class="list">'+recent.map(function(r){return '<li><span class="a">'+esc(r.text)+'</span><span class="b" style="font-size:12px">'+esc(fmtAt(r.t))+'</span></li>';}).join("")+'</ul>':'<p class="muted">Nothing yet. Parses, trades and imports show up here.</p>')+'</div>'+
+    '<div class="panel"><h3 class="sub-h">How it works</h3><ol class="steps"><li>On the <a href="#parse">Parsing</a> tab, paste screenshots (rosters, picks, standings, stats) or a trade. Check the preview, then apply.</li><li>Every team keeps its own data. Use the Team menu at the top to open one.</li><li>Click any table heading to sort. Click again to reverse.</li><li>Payroll is shown with and without team options. Player options count as paid.</li></ol></div></div>';
+  box.innerHTML=h;
+}
+
 /* ---------- orchestration ---------- */
-function refresh(){renderUpd();renderProfile();renderTop();renderPlayers();renderSummary();renderRotChecks();renderTrade();renderExtOut();renderScen();renderTeams();renderStandings();renderAudit();}
+function refresh(){renderUpd();renderProfile();renderTop();renderPlayers();renderSummary();renderRotChecks();renderTrade();renderExtOut();renderScen();renderTeams();renderStandings();renderAudit();renderHome();}
 function renderAll(){
   renderSettings();renderLedger();renderLog();renderRotTable();renderExtInputs();renderPicks();renderTargets();renderDevTable();
   renderTeamBar(); renderGP(); renderTB(); if(tp) tp=resolveTrade(tp.out,tp.text); renderTP(); renderPlog(); refresh(); $("rules").value=S.rules;
@@ -2547,7 +2785,7 @@ function renderAll(){
 
 function init(){
   S=load();
-  renderTabs(); renderAll(); renderShots(); save();
+  renderTabs(); renderAll(); renderShots(); save(); initSort();
   var lg=$("ledger");
   lg.addEventListener("input",onLedger); lg.addEventListener("change",onLedger); lg.addEventListener("focusin",onLedgerFocus);
   lg.addEventListener("click",function(e){
@@ -2596,8 +2834,9 @@ function init(){
     function fb(){ta.focus();ta.select();msg.textContent="Text selected. Press Ctrl+C (Cmd+C) to copy.";}
     try{navigator.clipboard.writeText(ta.value).then(function(){msg.textContent="Copied.";},fb);}catch(x){fb();}
   });
-  $("st-tbl").addEventListener("input",onRecord);
-  $("btn-rec-clear").addEventListener("click",function(){S.records={};S.recordsAt="";save();renderStandings();renderUpd();renderTeams();});
+  $("st-tbl").addEventListener("input",onRecord); $("st-tbl").addEventListener("change",onRecord);
+  $("btn-div-reset").addEventListener("click",function(){S.divs={};save();renderStandings();renderProfile();renderHome();});
+  $("btn-rec-clear").addEventListener("click",function(){S.records={};S.recordsAt="";save();renderStandings();renderUpd();renderTeams();renderHome();});
   $("audit-tbl").addEventListener("click",function(e){var id=e.target.getAttribute&&e.target.getAttribute("data-aopen"); if(id) switchTeam(id);});
   $("btn-audit-copy").addEventListener("click",function(){
     var txt=auditText(), msg=$("audit-msg");
