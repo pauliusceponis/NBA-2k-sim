@@ -117,6 +117,14 @@ tbody tr:hover{background:var(--surface2)}
 .thumbs{display:flex;flex-wrap:wrap;gap:10px}
 .thumb{position:relative;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--surface);width:150px}
 .thumb img{display:block;width:100%;height:96px;object-fit:cover}
+.thumbwrap{display:flex;flex-direction:column;gap:4px;width:150px}
+.thumbwrap select{width:100%;font-size:12px;padding:4px 6px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:6px}
+.pv-g{margin-bottom:12px}
+.pv-g .chk{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.statrow input{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:6px 8px;color:var(--ink);font-family:var(--f-data)}
+.profgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+textarea.tp{width:100%;min-height:130px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px;color:var(--ink);font-family:var(--f-body);box-sizing:border-box}
 .thumb button{position:absolute;top:4px;right:4px;padding:0 7px;line-height:20px}
 .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
 .list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
@@ -208,13 +216,18 @@ a{color:var(--accent)}
   <div class="tabpane" data-tab="teams">
     <section aria-labelledby="h-teams">
       <h2 id="h-teams">Teams in your league</h2>
-      <p class="muted">Each team keeps its own roster, rotation, picks, scenarios and rating log. The cap lines on the League tab are shared by every team. To fill a team, open it and paste screenshots on the Roster tab.</p>
+      <p class="muted">Each team keeps its own roster, rotation, picks, scenarios and rating log. The cap lines on the League tab are shared by every team. To fill teams, paste screenshots on the Parsing tab.</p>
       <div class="panel">
         <div class="form"><label for="tm-name">Team name<input id="tm-name" type="text" placeholder="e.g. Golden State Warriors" style="font-family:var(--f-body)"></label></div>
         <div class="toolbar" style="margin-top:10px"><button id="btn-tm-add" class="primary" type="button">Add team and open it</button><button id="btn-tm-ren" type="button">Rename the open team</button></div>
         <p id="tm-msg" class="src" role="status" style="margin-top:6px"></p>
       </div>
       <div class="panel scroll"><table class="ytable" id="tm-tbl"></table></div>
+    </section>
+    <section aria-labelledby="h-prof">
+      <h2 id="h-prof">Team profile</h2>
+      <div class="form" style="max-width:360px;margin-bottom:12px"><label for="prof-sel">Team<select id="prof-sel"></select></label></div>
+      <div id="prof-box"></div>
     </section>
     <section aria-labelledby="h-abs">
       <h2 id="h-abs">Who can take a salary</h2>
@@ -229,23 +242,9 @@ a{color:var(--accent)}
   <!-- ROSTER -->
   <div class="tabpane" data-tab="roster">
     <section aria-labelledby="h-shots">
-      <h2 id="h-shots">Screenshots</h2>
+      <h2 id="h-shots">Roster</h2>
       <p class="muted" id="roster-team"></p>
       <p class="src" id="roster-upd"></p>
-      <div id="drop" class="drop" tabindex="0" role="button" aria-label="Add screenshots">
-        <strong>Paste screenshots here</strong>
-        <span class="muted">Press Ctrl+V (Cmd+V on Mac) anywhere on this page, drop image files, or click to choose them. Roster, contracts and team salary screens all work.</span>
-      </div>
-      <input id="shot-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>
-      <div id="thumbs" class="thumbs"></div>
-      <div class="toolbar">
-        <button id="btn-read" class="primary" type="button" disabled>Read screenshots</button>
-        <button id="btn-stop" type="button" hidden>Stop</button>
-        <button id="btn-clear-shots" type="button" disabled>Remove all</button>
-      </div>
-      <p id="read-msg" class="muted" role="status"></p>
-      <div id="read-report" aria-live="polite"></div>
-      <p class="src">If a team name is visible on the screen, the rows go to that team: an existing one is matched by name, and an unknown name creates a new team. With no name visible they go to the open team. Screens that list draft picks or league standings are read too: picks go to the team named on the screen, standings go to every team listed. Rows read from a screenshot are tagged <span class="badge check">check</span> until you edit them. Claude can misread a digit, so compare against the screen. If a rating shows a ▲ or ▼ change, the League tab setting decides whether it is undone to get the base rating.</p>
     </section>
     <section aria-labelledby="h-ledger">
       <h2 id="h-ledger">Contracts</h2>
@@ -258,7 +257,7 @@ a{color:var(--accent)}
     </section>
     <section aria-labelledby="h-xl">
       <h2 id="h-xl">Import from Excel</h2>
-      <p class="muted">Choose a workbook (.xlsx, .xls or .csv) like your Mavs.xlsx. The page looks for a contracts sheet (a name column plus position, age, overall and one column per season), a depth sheet with minutes and a picks sheet. You can also drop the file on the screenshot box.</p>
+      <p class="muted">Choose a workbook (.xlsx, .xls or .csv) like your Mavs.xlsx. The page looks for a contracts sheet (a name column plus position, age, overall and one column per season), a depth sheet with minutes and a picks sheet. You can also drop the file on the screenshot box on the Parsing tab.</p>
       <div class="toolbar"><label class="btn" for="xl-file">Choose workbook</label><input id="xl-file" type="file" accept=".xlsx,.xls,.csv" hidden></div>
       <div id="xl-box"></div>
       <div id="xl-report" aria-live="polite"></div>
@@ -268,6 +267,62 @@ a{color:var(--accent)}
       <p class="muted">Every rating that changes after a screenshot read or a manual edit is recorded here.</p>
       <div class="toolbar"><button id="btn-clear-log" type="button">Clear log</button></div>
       <div class="panel scroll"><table class="ytable" id="log-tbl"></table></div>
+    </section>
+  </div>
+
+  <!-- TOP CONTRACTS -->
+  <div class="tabpane" data-tab="top">
+    <section aria-labelledby="h-top">
+      <h2 id="h-top">Biggest contracts, payroll and expiries</h2>
+      <p class="muted">Every contract of every team in the league. An expiry is the last season with a salary. Players with a player or team option in that last season are listed separately, because the option decides whether they really leave.</p>
+      <div id="top-box"></div>
+    </section>
+  </div>
+
+  <!-- PLAYERS -->
+  <div class="tabpane" data-tab="players">
+    <section aria-labelledby="h-pl">
+      <h2 id="h-pl">Player profile</h2>
+      <div class="form" style="margin-bottom:12px"><label for="pl-q">Search<input id="pl-q" type="text" placeholder="Name or team" style="font-family:var(--f-body)"></label><label for="pl-sel">Player<select id="pl-sel"></select></label></div>
+      <div id="pl-box"></div>
+    </section>
+  </div>
+
+  <!-- PARSING -->
+  <div class="tabpane" data-tab="parse">
+    <section aria-labelledby="h-parse">
+      <h2 id="h-parse">Screenshot parsing</h2>
+      <p class="muted">Paste or drop screenshots, give each one a category (or leave Auto-detect), then read them. Nothing is added until you have reviewed the result and pressed Apply. Reading uses Claude and is limited to the owner of this page.</p>
+      <div class="form" style="max-width:420px;margin-bottom:10px"><label for="pc-default">New screenshots are<select id="pc-default"></select></label></div>
+      <div id="drop" class="drop" tabindex="0" role="button" aria-label="Add screenshots">
+        <strong>Paste screenshots here</strong>
+        <span class="muted">Press Ctrl+V (Cmd+V on Mac) anywhere on this page, drop image files, or click to choose them.</span>
+      </div>
+      <input id="shot-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>
+      <div id="thumbs" class="thumbs" style="margin-top:10px"></div>
+      <div class="toolbar" style="margin-top:10px">
+        <button id="btn-read" class="primary" type="button" disabled>Read screenshots</button>
+        <button id="btn-stop" type="button" hidden>Stop</button>
+        <button id="btn-clear-shots" type="button" disabled>Remove all</button>
+      </div>
+      <p id="read-msg" class="muted" role="status"></p>
+      <div id="read-report" aria-live="polite"></div>
+      <div id="pv-box"></div>
+      <p class="src">If a team name is visible on a roster, picks or stats screen, the rows go to that team: an existing one is matched by name, and an unknown name creates a new team. With no name visible they go to the open team. Rows from a roster screenshot are tagged <span class="badge check">check</span> until you edit them. Claude can misread a digit, so compare against the screen. If a rating shows a ▲ or ▼ change, the League tab setting decides whether it is undone to get the base rating.</p>
+    </section>
+    <section aria-labelledby="h-tp">
+      <h2 id="h-tp">Trade parser</h2>
+      <p class="muted">Paste the text of a trade, for example from your league chat. Claude reads who sends what to whom, the page matches it to your rosters and picks, checks it against the salary rule and the first-round pick rule, and shows the result. You then apply it, which moves the players and picks.</p>
+      <textarea id="tp-text" class="tp" aria-label="Trade text" placeholder="e.g. Dallas sends J. Okafor and a 2027 first to Boston for K. Oubre"></textarea>
+      <div class="toolbar" style="margin-top:8px"><button id="btn-tp-read" class="primary" type="button">Read the trade</button><button id="btn-tp-clear" type="button">Clear</button></div>
+      <p id="tp-msg" class="muted" role="status"></p>
+      <div id="tp-box"></div>
+    </section>
+    <section aria-labelledby="h-plog">
+      <h2 id="h-plog">Activity log</h2>
+      <p class="muted">Every screenshot parse, trade, Excel import and undo is recorded with its date. Undo restores the data from before the last apply on this page. It is kept in memory only, so it is gone after a reload.</p>
+      <div class="toolbar"><button id="btn-undo" type="button" disabled>Undo the last apply</button><button id="btn-plog-clear" type="button">Clear log</button></div>
+      <div class="panel scroll"><table class="ytable" id="plog-tbl"></table></div>
     </section>
   </div>
 
@@ -384,6 +439,7 @@ a{color:var(--accent)}
       <h2 id="h-gp">Gameplan</h2>
       <p class="muted">Coaching sliders, sim points of emphasis and system for the open team. The field names follow the templates in your league chat, and the suggestions in each box are values seen there. You can type any value.</p>
       <div class="panel"><h3 class="sub-h">Current settings</h3><div class="form" id="gp-form"></div></div>
+      <details class="panel"><summary><strong>Edit the option lists</strong></summary><p class="muted" style="margin-top:8px">One option per line. The text boxes above suggest these. You can type any value even if it is not listed. Paste a screenshot of an in-game option list on the Parsing tab with the category Gameplan options to fill a list from it.</p><div class="form" id="gp-opts" style="margin-top:8px"></div><div class="toolbar" style="margin-top:8px"><button id="btn-gpo-reset" type="button">Reset the lists to the defaults</button></div></details>
       <div class="panel">
         <h3 class="sub-h">Templates</h3>
         <div class="form"><label for="gp-name">Template name<input id="gp-name" type="text" placeholder="e.g. Tank phase" style="font-family:var(--f-body)"></label><label class="chk" for="gp-incl"><input id="gp-incl" type="checkbox"> Include the rotation</label></div>
@@ -400,7 +456,7 @@ a{color:var(--accent)}
   <div class="tabpane" data-tab="standings">
     <section aria-labelledby="h-st">
       <h2 id="h-st">Standings</h2>
-      <p class="muted">Enter each team's record, or paste a standings screenshot on the Roster tab. The teams with the worst records go into the draft lottery. Lottery size, picks drawn and the odds are on the League tab.</p>
+      <p class="muted">Enter each team's record, or paste a standings screenshot on the Parsing tab. The teams with the worst records go into the draft lottery. Lottery size, picks drawn and the odds are on the League tab.</p>
       <p class="src" id="st-upd"></p>
       <div class="toolbar"><button id="btn-rec-clear" type="button">Clear all records</button></div>
       <div class="panel scroll"><table class="ytable" id="st-tbl"></table></div>
@@ -453,7 +509,7 @@ a{color:var(--accent)}
 (function(){
 "use strict";
 var KEY="caproom-v1", NY=5, POS=["PG","SG","SF","PF","C"];
-var TABS=[["cap","Cap"],["teams","Teams"],["roster","Roster"],["rotation","Rotation"],["gameplan","Gameplan"],["deals","Deals"],["picks","Picks"],["standings","Standings"],["development","Development"],["scenarios","Scenarios"],["audit","Audit"],["league","League"]];
+var TABS=[["cap","Cap"],["teams","Teams"],["top","Top contracts"],["players","Players"],["roster","Roster"],["parse","Parsing"],["rotation","Rotation"],["gameplan","Gameplan"],["deals","Deals"],["picks","Picks"],["standings","Standings"],["development","Development"],["scenarios","Scenarios"],["audit","Audit"],["league","League"]];
 var DEFAULT_RULES=[
 "Free agency (rule fragments seen in your league chat; verify):",
 "- A signed free agent can be made available for trade only after the first sim of the season. This does not apply to minimum-contract free agents.",
@@ -514,14 +570,14 @@ function seedState(){
 
 function defaults(){
   return {
-    settings:{season:"2019-20",cap:109.14,tax:132.627,apron:138.928,floor:98.226,kickUnder:25,kickOver:0,lotteryTeams:14,lotteryPicks:4,lotteryOdds:"14,14,14,12.5,10.5,9,7.5,6,4.5,3,2,1.5,1,0.5",
+    settings:{season:"2019-20",cap:109.14,tax:132.627,apron:138.928,floor:98.226,kickUnder:25,kickOver:0,minFirsts:1,minFirstsStart:2,lotteryTeams:14,lotteryPicks:4,lotteryOdds:"14,14,14,12.5,10.5,9,7.5,6,4.5,3,2,1.5,1,0.5",
       total:240,topN:3,topMin:28,startN:2,subOvr:70,subMax:10,bench:12,prospectAge:23,vetAge:29,undoDelta:1},
     players:clone(EXAMPLES), rules:DEFAULT_RULES, team:{id:"t0",name:"My team"}, others:[], trades:[], records:{},
     rot:{m:{},st:{},pp:{}}, picks:[], targets:[], scen:[], ratingLog:[], plan:{}, plans:[], planBase:"",
     ext:{pid:"",offers:[{yrs:2,first:0,chg:0},{yrs:3,first:0,chg:-5},{yrs:5,first:0,chg:0}]}
   };
 }
-function norm(p){ if(!p.id) p.id=uid(); if(!Array.isArray(p.sal)) p.sal=[]; while(p.sal.length<NY) p.sal.push(null); }
+function norm(p){ if(!p.id) p.id=uid(); if(!Array.isArray(p.stats)) p.stats=[]; if(!Array.isArray(p.attrs)) p.attrs=[]; if(!Array.isArray(p.sal)) p.sal=[]; while(p.sal.length<NY) p.sal.push(null); }
 function load(){
   var st=null, d=defaults();
   try{var raw=localStorage.getItem(KEY); if(raw) st=JSON.parse(raw);}catch(e){}
@@ -536,6 +592,8 @@ function normState(st){
   if(!Array.isArray(st.trades)) st.trades=[];
   if(!st.records||typeof st.records!=="object") st.records={};
   if(typeof st.recordsAt!=="string") st.recordsAt="";
+  if(!Array.isArray(st.plog)) st.plog=[];
+  if(!st.gpOpts||typeof st.gpOpts!=="object") st.gpOpts={};
   if(!st.team||!st.team.id||!st.team.name) st.team={id:"t0",name:(st.seedVer&&st.players.some(function(p){return p.id==="s1";}))?"Dallas Mavericks":"My team"};
   if(!Array.isArray(st.others)) st.others=[];
   st.others=st.others.filter(function(o){return o&&o.name;});
@@ -552,6 +610,7 @@ function fixTeam(st,d){
   if(!Array.isArray(st.plans)) st.plans=[];
   if(typeof st.planBase!=="string") st.planBase="";
   if(!st.upd||typeof st.upd!=="object") st.upd={};
+  if(!Array.isArray(st.tstats)) st.tstats=[];
   st.plans.forEach(function(t){if(!t.id) t.id=uid(); if(!t.plan||typeof t.plan!=="object") t.plan={};});
   ["picks","targets","scen","ratingLog"].forEach(function(k){if(!Array.isArray(st[k])) st[k]=[];});
   if(!st.rot||typeof st.rot!=="object") st.rot={};
@@ -560,6 +619,10 @@ function fixTeam(st,d){
   st.players.forEach(norm);
   st.scen.forEach(function(sc){if(!sc.id) sc.id=uid(); if(!Array.isArray(sc.players)) sc.players=[]; sc.players.forEach(norm);});
   ["picks","targets"].forEach(function(k){st[k].forEach(function(r){if(!r.id) r.id=uid();});});
+  st.picks.forEach(function(r){
+    if(r.swap!=="Yes") r.swap="No"; if(typeof r.swapWith!=="string") r.swapWith="";
+    if(r.protN==null){var mm=/top[\s-]*(\d+)/i.exec(String(r.prot||"")); r.protN=mm?+mm[1]:null;}
+  });
   return st;
 }
 var acct={ref:null,busy:false,dirty:false,t:null};
@@ -1051,7 +1114,7 @@ function onFill(e){
 }
 
 /* ---------- PICKS + TARGETS ---------- */
-var COLS_PICKS=[{f:"year",l:"Year",t:"number",c:"w5"},{f:"round",l:"Round",t:"select",o:["1","2"],c:"w5"},{f:"team",l:"Original team",t:"text",c:"nm"},{f:"status",l:"Status",t:"select",o:["Own","Acquired","Traded away"],c:"kd"},{f:"prot",l:"Protection",t:"text",c:"nm"},{f:"note",l:"Note",t:"text",c:"w9"}];
+var COLS_PICKS=[{f:"year",l:"Year",t:"number",c:"w5"},{f:"round",l:"Round",t:"select",o:["1","2"],c:"w5"},{f:"team",l:"Original team",t:"text",c:"nm"},{f:"status",l:"Status",t:"select",o:["Own","Acquired","Traded away"],c:"kd"},{f:"prot",l:"Protection (text)",t:"text",c:"nm"},{f:"protN",l:"Top-N protected",t:"number",c:"w5"},{f:"swap",l:"Swap",t:"select",o:["No","Yes"],c:"kd"},{f:"swapWith",l:"Swap with",t:"text",c:"nm"},{f:"note",l:"Note",t:"text",c:"w9"}];
 var COLS_TARGETS=[{f:"name",l:"Player",t:"text",c:"nm"},{f:"pos",l:"Pos",t:"text",c:"ps"},{f:"year",l:"Draft year",t:"number",c:"w5"},{f:"tier",l:"Tier",t:"select",o:["Top target","Fallback","Watch"],c:"kd"},{f:"note",l:"Note",t:"text",c:"w9"}];
 function genTable(elId,list,cols){
   var rows=S[list], h='<thead><tr>'+cols.map(function(c){return '<th class="'+(c.t==="number"?"":"l")+'" style="'+(c.t==="number"?"":"text-align:left")+'">'+c.l+'</th>';}).join("")+'<th></th></tr></thead><tbody>';
@@ -1085,13 +1148,13 @@ function bindGen(id){
   function h(e){
     var t=e.target, list=t.getAttribute("data-list"), rid=t.getAttribute("data-id"), f=t.getAttribute("data-f"); if(!list) return;
     var r=S[list].filter(function(x){return x.id===rid;})[0]; if(!r) return;
-    r[f]=t.type==="number"?num(t.value):t.value; if(list==="picks") touch(S,"picks"); save(); if(list==="picks"){renderPicksSum();renderUpd();renderTeams();}
+    r[f]=t.type==="number"?num(t.value):t.value; if(list==="picks") touch(S,"picks"); save(); if(list==="picks"){renderPicksSum();renderUpd();renderTeams();renderLottery();}
   }
   el.addEventListener("input",h); el.addEventListener("change",h);
   el.addEventListener("click",function(e){
     var d=e.target.getAttribute&&e.target.getAttribute("data-gdel"); if(!d) return;
     var a=d.split(":"); S[a[0]]=S[a[0]].filter(function(x){return x.id!==a[1];}); if(a[0]==="picks") touch(S,"picks"); save();
-    if(a[0]==="picks") renderPicks(); else renderTargets();
+    if(a[0]==="picks"){renderPicks();renderLottery();renderUpd();renderTeams();} else renderTargets();
   });
 }
 function seasonStart(){var mm=/^(\d{4})/.exec(String(S.settings.season||"")); return mm?+mm[1]:null;}
@@ -1171,6 +1234,7 @@ function onScenClick(e){
 var SPEC=[
  ["Cap lines",[["season","Current season","text"],["cap","Salary cap ($M)"],["tax","Tax line ($M)"],["apron","Apron ($M)"],["floor","Salary floor ($M)"],["kickUnder","Trade kicker: % more a team under the cap may take back than it sends"],["kickOver","Trade kicker: % more a team at or over the cap may take back"]]],
  ["Draft lottery",[["lotteryTeams","Teams in the lottery"],["lotteryPicks","Top picks drawn by lottery (0 = worst record first, max 5)"],["lotteryOdds","Odds of the top pick by seed, % (worst record first)","text"]]],
+ ["Pick rules",[["minFirsts","Minimum first-round picks a team must hold at all times"],["minFirstsStart","Minimum first-round picks at the start of the season"]]],
  ["Rotation rules (from your league chat)",[["total","Minutes per game"],["topN","Top players with a minute floor"],["topMin","Minute floor for them"],["startN","Top players who must start"],["subOvr","Sub-OVR line"],["subMax","Max minutes below that line"],["bench","Max bench players used"]]],
  ["Development and screenshots",[["prospectAge","Prospect up to age"],["vetAge","Veteran from age"],["undoDelta","Undo the ▲/▼ change shown beside a rating, to get the base rating","checkbox"]]]
 ];
@@ -1198,16 +1262,16 @@ function addFiles(files){
   var n=0;
   Array.prototype.forEach.call(files,function(f){
     if(/\.(xlsx|xls|csv)$/i.test(f.name||"")){handleWorkbook(f);return;}
-    if(/^image\/(png|jpe?g|webp|gif)$/.test(f.type)){shots.push({blob:f,url:URL.createObjectURL(f)});n++;}
+    if(/^image\/(png|jpe?g|webp|gif)$/.test(f.type)){shots.push({blob:f,url:URL.createObjectURL(f),cat:($("pc-default")&&$("pc-default").value)||"auto"});n++;}
   });
   if(n) renderShots();
 }
 function renderShots(){
-  $("thumbs").innerHTML=shots.map(function(s,i){return '<div class="thumb"><img src="'+s.url+'" alt="Screenshot '+(i+1)+'"><button type="button" data-rm="'+i+'" aria-label="Remove screenshot '+(i+1)+'">×</button></div>';}).join("");
+  $("thumbs").innerHTML=shots.map(function(s,i){return '<div class="thumbwrap"><div class="thumb"><img src="'+s.url+'" alt="Screenshot '+(i+1)+'"><button type="button" data-rm="'+i+'" aria-label="Remove screenshot '+(i+1)+'">×</button></div><select data-cat="'+i+'" aria-label="Category of screenshot '+(i+1)+'">'+CATS.map(function(c){return '<option value="'+c[0]+'"'+((s.cat||"auto")===c[0]?" selected":"")+'>'+c[1]+'</option>';}).join("")+'</select></div>';}).join("");
   $("btn-read").disabled=!(shots.length&&canRead&&!ctl);
   $("btn-clear-shots").disabled=!shots.length;
 }
-function prompt_(){
+function promptBase(){
   var L=labels();
   return "These images are screenshots from an NBA 2K26 franchise or sim league: rosters, contracts, team salary screens, draft pick lists and league standings. "+
   "Read every player row you can see and reply with only one JSON object of this shape:\n"+
@@ -1225,6 +1289,20 @@ function prompt_(){
   "- standings: when a screen shows league standings, put one entry per team row in the top-level standings array with the team name as printed, w for wins and l for losses. Use [] when no standings are shown. Do not put standings rows into teams.\n"+
   "- Put anything unclear (cut-off text, a partly hidden row) in that player's note.\n"+
   '- Also report what you could not read. Add a top-level "images" array with one entry per screenshot in the order given: {"index":1,"status":"read","note":""}, where status is "read", "partly" or "unreadable" and note says why (blurry, cropped, no player rows). Add a top-level "problems" array of short strings for anything else you could not read or were unsure about, and an "unreadable" array of short strings inside a team entry for rows or values you skipped there. Use empty arrays when there is nothing to report.';
+}
+var CATS=[["auto","Auto-detect"],["roster","Roster and contracts"],["standings","Standings"],["picks","Draft picks"],["tstats","Team stats"],["pstats","Player stats"],["pattrs","Player attributes"],["gameplan","Gameplan options"]];
+function prompt_(list){
+  var cn={}; CATS.forEach(function(c){cn[c[0]]=c[1];});
+  var per=(list||[]).map(function(x,i){return "Screenshot "+(i+1)+": "+((x.cat&&x.cat!=="auto"&&cn[x.cat])?"the user says it shows "+cn[x.cat].toLowerCase():"no category given, so decide what it shows");}).join("\n");
+  return per+"\n\n"+promptBase()+"\n"+
+  "Additional keys and rules:\n"+
+  '- Each team entry may also have "team_stats": [{"name":"PPG","value":"112.4"}] for team statistics shown on a screen (name and value exactly as printed).\n'+
+  '- Add a top-level "player_stats": [{"team":null,"player":"First Last","stats":[{"name":"PPG","value":"20.1"}]}] for per-player statistics. team is the team name if one is printed, otherwise null.\n'+
+  '- Add a top-level "player_attributes": [{"team":null,"player":"First Last","attributes":[{"name":"Three-Point Shot","value":"85"}]}] for a player\'s attribute ratings (shooting, finishing, defense, physicals and similar). Use the attribute names exactly as printed and the numeric value as printed.\n'+
+  '- Add a top-level "gameplan_options": [{"field":"Offensive Focus","options":["No Preference","Play Through Star"]}] when a screen lists the choices of a gameplan setting. field is the setting name as printed.\n'+
+  '- For every pick also give "top_protected" (the number N when the pick is protected in the top N, otherwise null), "swap" (true when the screen says the pick is swapped or carries swap rights) and "swap_with" (the other team\'s name, otherwise null).\n'+
+  '- In the images array each entry also has "kind": roster, standings, picks, team_stats, player_stats, player_attributes, gameplan or other, for what that screenshot shows.\n'+
+  "- Use empty arrays for anything that is not shown. Never invent a value.\n";
 }
 function normTeamName(n){return String(n||"").toLowerCase().replace(/[^a-z0-9]/g,"");}
 function isSubseq(a,b){var i=0; for(var j=0;j<b.length&&i<a.length;j++){if(a.charAt(i)===b.charAt(j)) i++;} return i===a.length;}
@@ -1278,72 +1356,142 @@ function showReport(level,head,items,boxId){
   }
   box.innerHTML=h+'</div>';
 }
+/* ---------- activity log and undo ---------- */
+var lastSnap=null;
+function logAct(cat,text){S.plog.push({t:new Date().toISOString(),cat:cat,text:text}); if(S.plog.length>150) S.plog=S.plog.slice(-150);}
+function snap(){try{lastSnap=JSON.stringify(S);}catch(e){lastSnap=null;} renderUndo();}
+function renderUndo(){var b=$("btn-undo"); if(b) b.disabled=!lastSnap;}
+function renderPlog(){
+  var rows=S.plog.slice().reverse().slice(0,60);
+  $("plog-tbl").innerHTML='<thead><tr><th class="l">When</th><th class="l">Type</th><th class="l">What happened</th></tr></thead><tbody>'+(rows.length?rows.map(function(r){return '<tr><td class="l">'+esc(fmtAt(r.t))+'</td><td class="l">'+esc(r.cat)+'</td><td class="l">'+esc(r.text)+'</td></tr>';}).join(""):'<tr><td class="l muted" colspan="3">Nothing recorded yet.</td></tr>')+'</tbody>';
+  renderUndo();
+}
+function undoLast(){
+  if(!lastSnap) return;
+  var keepLog=S.plog, prev;
+  try{prev=normState(JSON.parse(lastSnap));}catch(e){$("read-msg").textContent="Could not restore the earlier data.";return;}
+  S=prev; S.plog=keepLog; lastSnap=null; tp=null; pend=null; outSet={};
+  logAct("Undo","Restored the data from before the last apply.");
+  save(); renderAll(); $("read-msg").textContent="Restored the data from before the last apply.";
+}
+
+/* ---------- PARSING: screenshots ---------- */
+var pend=null;
+function sameName(a,b){var x=normTeamName(a), y=normTeamName(b); if(!x||!y) return false; return x===y||normTeamName(short(a))===normTeamName(short(b));}
+function findPlayers(name,teamHint){
+  var rows=allTeams(), out=[];
+  if(teamHint){var h=findTeamByName(teamHint); if(h) rows=rows.filter(function(r){return r.id===h.id;});}
+  rows.forEach(function(r){var t=tdata(r.id); t.d.players.forEach(function(p){if(sameName(p.name,name)) out.push({t:t,p:p});});});
+  return out;
+}
+function kvNorm(arr){return (Array.isArray(arr)?arr:[]).filter(function(x){return x&&x.name!=null&&String(x.name).trim()&&x.value!=null&&String(x.value).trim()!=="";}).map(function(x){return {name:String(x.name).trim(),value:String(x.value).trim()};});}
+function mergeKV(list,items){items.forEach(function(x){var ex=list.filter(function(r){return String(r.k).toLowerCase()===x.name.toLowerCase();})[0]; if(ex) ex.v=x.value; else list.push({k:x.name,v:x.value});});return items.length;}
+function resolveTarget(nm){
+  nm=nm?String(nm).trim():""; var hit=nm?findTeamByName(nm):null;
+  if(!nm||(hit&&hit.active)) return {label:S.team.name,kind:"open",id:S.team.id,d:S,noname:!nm};
+  if(hit){var o=S.others.filter(function(x){return x.id===hit.id;})[0]; return {label:o.name,kind:"existing",id:o.id,d:o.data};}
+  return {label:nm,kind:"new",id:null,d:null};
+}
+function buildPending(out,issues){
+  var groups=out&&Array.isArray(out.teams)?out.teams:(out&&Array.isArray(out.players)?[{name:null,players:out.players,payroll:out.team&&out.team.payroll}]:[]);
+  groups=groups.filter(function(g){return g&&((Array.isArray(g.players)&&g.players.length)||(Array.isArray(g.picks)&&g.picks.length)||kvNorm(g.team_stats).length);}).map(function(g){return {g:g,on:true,ts:kvNorm(g.team_stats)};});
+  var rawS=out&&Array.isArray(out.standings)?out.standings:[];
+  var stand=rawS.filter(function(x){return x&&x.team&&num(x.w)!=null&&num(x.l)!=null;}).map(function(x){return {x:x,on:true};});
+  var ps=(out&&Array.isArray(out.player_stats)?out.player_stats:[]).filter(function(x){return x&&x.player&&kvNorm(x.stats).length;}).map(function(x){return {x:x,kv:kvNorm(x.stats),on:true};});
+  var pa=(out&&Array.isArray(out.player_attributes)?out.player_attributes:[]).filter(function(x){return x&&x.player&&kvNorm(x.attributes).length;}).map(function(x){return {x:x,kv:kvNorm(x.attributes),on:true};});
+  var gpo=(out&&Array.isArray(out.gameplan_options)?out.gameplan_options:[]).map(function(x){
+    var f=x&&x.field?GP_TEXT.filter(function(t){return normTeamName(t[1])===normTeamName(x.field)||t[0]===x.field;})[0]:null;
+    var opts=x&&Array.isArray(x.options)?x.options.map(function(o){return String(o).trim();}).filter(Boolean):[];
+    if(!f){if(x&&x.field) issues.push({level:"warn",text:"The option list '"+x.field+"' does not match a gameplan text field, so it was skipped."}); return null;}
+    return opts.length?{f:f,opts:opts,on:true}:null;
+  }).filter(Boolean);
+  return {groups:groups,stand:stand,badStand:rawS.length-stand.length,ps:ps,pa:pa,gpo:gpo,issues:issues};
+}
+function diffPlayer(ex,r){
+  var ch=[], L=labels();
+  if(num(r.ovr)!=null&&ex.ovr!=null&&num(r.ovr)!==ex.ovr) ch.push("OVR "+ex.ovr+" → "+num(r.ovr));
+  (Array.isArray(r.salaries)?r.salaries:[]).forEach(function(v,i){var n=num(v); if(n!=null&&ex.sal[i]!=null&&Math.abs(n-ex.sal[i])>0.0001) ch.push(L[i]+" "+ex.sal[i]+" → "+n);});
+  return ch;
+}
+function renderPreview(){
+  var box=$("pv-box"); if(!pend){box.innerHTML="";return;}
+  var L=labels(), h='<div class="panel" style="margin-top:12px"><h3 class="sub-h">Review before applying</h3><p class="muted">Nothing has been added yet. Untick anything you do not want, then press Apply.</p>';
+  pend.groups.forEach(function(G,i){
+    var g=G.g, T=resolveTarget(g.name), plrs=Array.isArray(g.players)?g.players:[], picks=Array.isArray(g.picks)?g.picks:[];
+    var where=T.kind==="new"?'<span class="pill warn">new team will be created</span>':T.kind==="open"?('<span class="pill ok">open team'+(T.noname?", no team name visible":"")+'</span>'):'<span class="pill ok">existing team</span>';
+    h+='<div class="pv-g"><label class="chk" for="pv-g'+i+'"><input id="pv-g'+i+'" type="checkbox" data-pv="g:'+i+'"'+(G.on?" checked":"")+'><strong>'+esc(T.label)+'</strong> '+where+'</label>';
+    if(plrs.length){
+      h+='<div class="scroll"><table class="ytable"><thead><tr><th class="l">Player</th><th>Pos</th><th>Age</th><th>OVR</th>'+L.map(function(l){return '<th>'+esc(l)+'</th>';}).join("")+'<th class="l">Compared with the team now</th></tr></thead><tbody>'+plrs.map(function(r){
+        var ex=T.d?T.d.players.filter(function(p){return (p.name||"").toLowerCase()===String(r&&r.name||"").trim().toLowerCase();})[0]:null, ch=ex?diffPlayer(ex,r):[], sal=Array.isArray(r.salaries)?r.salaries:[];
+        return '<tr><td class="l">'+esc(r&&r.name||"(no name)")+'</td><td>'+esc(r&&r.pos||"")+'</td><td>'+esc(r&&r.age!=null?r.age:"")+'</td><td>'+esc(r&&r.ovr!=null?r.ovr:"")+'</td>'+L.map(function(l,k){return '<td>'+(num(sal[k])!=null?esc(num(sal[k])):"–")+'</td>';}).join("")+'<td class="l">'+(!ex?'<span class="pill ok">new</span>':ch.length?'<span class="pill warn">changes</span> '+esc(ch.join(", ")):'<span class="pill na">same</span>')+'</td></tr>';
+      }).join("")+'</tbody></table></div>';
+    }
+    if(picks.length) h+='<p class="src" style="margin-top:8px"><strong>Picks:</strong> '+picks.map(function(p){return esc((p.year==null?"?":p.year)+" R"+(p.round==null?"?":p.round)+" "+(p.team||"?")+(p.top_protected?" · top "+p.top_protected+" protected":p.protection?" · "+p.protection:"")+(p.swap?" · swap"+(p.swap_with?" with "+p.swap_with:""):""));}).join("; ")+'</p>';
+    if(G.ts.length) h+='<p class="src"><strong>Team stats:</strong> '+G.ts.map(function(x){return esc(x.name+" "+x.value);}).join(", ")+'</p>';
+    h+='</div>';
+  });
+  if(pend.stand.length){
+    h+='<div class="pv-g"><strong>Standings</strong><div class="scroll"><table class="ytable"><thead><tr><th></th><th class="l">Team</th><th>W</th><th>L</th><th class="l">Team in the league</th></tr></thead><tbody>'+pend.stand.map(function(X,i){
+      var hit=findTeamByName(String(X.x.team));
+      return '<tr><td><input type="checkbox" data-pv="s:'+i+'"'+(X.on?" checked":"")+' aria-label="Include '+esc(X.x.team)+'"></td><td class="l">'+esc(X.x.team)+'</td><td>'+esc(num(X.x.w))+'</td><td>'+esc(num(X.x.l))+'</td><td class="l">'+(hit?'<span class="pill ok">'+esc(hit.name)+'</span>':'<span class="pill warn">new team will be created</span>')+'</td></tr>';
+    }).join("")+'</tbody></table></div></div>';
+  }
+  if(pend.ps.length){
+    h+='<div class="pv-g"><strong>Player stats</strong><div class="scroll"><table class="ytable"><thead><tr><th></th><th class="l">Player</th><th class="l">Stats</th><th class="l">Match</th></tr></thead><tbody>'+pend.ps.map(function(X,i){
+      var c=findPlayers(String(X.x.player),X.x.team);
+      return '<tr><td><input type="checkbox" data-pv="p:'+i+'"'+(X.on?" checked":"")+' aria-label="Include '+esc(X.x.player)+'"></td><td class="l">'+esc(X.x.player)+'</td><td class="l">'+esc(X.kv.map(function(k){return k.name+" "+k.value;}).join(", "))+'</td><td class="l">'+(c.length===1?'<span class="pill ok">'+esc(c[0].t.name)+'</span>':c.length?'<span class="pill warn">several players match</span>':'<span class="pill no">not found</span>')+'</td></tr>';
+    }).join("")+'</tbody></table></div></div>';
+  }
+  if(pend.pa.length){
+    h+='<div class="pv-g"><strong>Player attributes</strong><div class="scroll"><table class="ytable"><thead><tr><th></th><th class="l">Player</th><th class="l">Attributes</th><th class="l">Match</th></tr></thead><tbody>'+pend.pa.map(function(X,i){
+      var c=findPlayers(String(X.x.player),X.x.team);
+      return '<tr><td><input type="checkbox" data-pv="a:'+i+'"'+(X.on?" checked":"")+' aria-label="Include '+esc(X.x.player)+'"></td><td class="l">'+esc(X.x.player)+'</td><td class="l">'+esc(X.kv.map(function(k){return k.name+" "+k.value;}).join(", "))+'</td><td class="l">'+(c.length===1?'<span class="pill ok">'+esc(c[0].t.name)+'</span>':c.length?'<span class="pill warn">several players match</span>':'<span class="pill no">not found</span>')+'</td></tr>';
+    }).join("")+'</tbody></table></div></div>';
+  }
+  if(pend.gpo.length){
+    h+='<div class="pv-g"><strong>Gameplan option lists</strong>'+pend.gpo.map(function(X,i){return '<label class="chk" for="pv-o'+i+'"><input id="pv-o'+i+'" type="checkbox" data-pv="o:'+i+'"'+(X.on?" checked":"")+'>'+esc(X.f[1])+': '+esc(X.opts.join(", "))+'</label>';}).join("")+'</div>';
+  }
+  h+='<div class="toolbar"><button id="btn-pv-apply" class="primary" type="button">Apply</button><button id="btn-pv-discard" type="button">Discard</button></div></div>';
+  box.innerHTML=h;
+}
+function onPreview(e){
+  var t=e.target, k=t.getAttribute&&t.getAttribute("data-pv");
+  if(k&&pend){var a=k.split(":"), i=+a[1], on=t.checked; if(a[0]==="g") pend.groups[i].on=on; else if(a[0]==="s") pend.stand[i].on=on; else if(a[0]==="p") pend.ps[i].on=on; else if(a[0]==="a") pend.pa[i].on=on; else if(a[0]==="o") pend.gpo[i].on=on; return;}
+  if(t.id==="btn-pv-apply") applyPending();
+  else if(t.id==="btn-pv-discard"){pend=null; renderPreview(); $("read-report").innerHTML=""; $("read-msg").textContent="Discarded. The screenshots are still here if you want to read them again.";}
+}
 async function readShots(){
   if(!sampleFn||!shots.length) return;
-  ctl=new AbortController(); $("btn-read").disabled=true; $("btn-stop").hidden=false;
+  ctl=new AbortController(); $("btn-read").disabled=true; $("btn-stop").hidden=false; pend=null; renderPreview();
   var msg=$("read-msg"); msg.textContent="Reading "+shots.length+" screenshot"+(shots.length>1?"s":"")+"…"; $("read-report").innerHTML="";
   try{
-    var blobs=shots.slice(0,maxImgs).map(function(s){return s.blob;});
-    var out=await sampleFn.json(prompt_(),{images:blobs,signal:ctl.signal,modelTier:"default"});
+    var used=shots.slice(0,maxImgs), blobs=used.map(function(s){return s.blob;});
+    var out=await sampleFn.json(prompt_(used),{images:blobs,signal:ctl.signal,modelTier:"default"});
     var issues=[];
-    if(shots.length>maxImgs) issues.push({level:"bad",text:"Only the first "+maxImgs+" of "+shots.length+" screenshots could be sent. The rest were not read. Remove the ones already read and read the others separately."});
+    if(shots.length>maxImgs) issues.push({level:"bad",text:"Only the first "+maxImgs+" of "+shots.length+" screenshots could be sent. The rest were not read. Apply this batch, then read the others."});
     (out&&Array.isArray(out.images)?out.images:[]).forEach(function(im){
-      if(!im||im.status==="read") return;
+      if(!im) return;
+      var idx=im.index!=null?im.index:"?", sh=used[(+im.index||0)-1], asked=sh&&sh.cat!=="auto"?sh.cat:null, kind={roster:"roster",standings:"standings",picks:"picks",team_stats:"tstats",player_stats:"pstats",player_attributes:"pattrs",gameplan:"gameplan"}[im.kind]||null;
+      if(asked&&kind&&asked!==kind) issues.push({level:"warn",text:"Screenshot "+idx+" was marked "+asked+" but looks like "+im.kind.replace("_"," ")+". Check what was read from it."});
+      if(im.status==="read") return;
       var bad=im.status==="unreadable";
-      issues.push({level:bad?"bad":"warn",text:"Screenshot "+(im.index!=null?im.index:"?")+" "+(bad?"could not be read":"was only partly readable")+(im.note?": "+im.note:".")});
+      issues.push({level:bad?"bad":"warn",text:"Screenshot "+idx+" "+(bad?"could not be read":"was only partly readable")+(im.note?": "+im.note:".")});
     });
     (out&&Array.isArray(out.problems)?out.problems:[]).forEach(function(t){if(t) issues.push({level:"warn",text:String(t)});});
-    var groups=out&&Array.isArray(out.teams)?out.teams:(out&&Array.isArray(out.players)?[{name:null,players:out.players,payroll:out.team&&out.team.payroll}]:[]);
-    groups=groups.filter(function(g){return g&&((Array.isArray(g.players)&&g.players.length)||(Array.isArray(g.picks)&&g.picks.length));});
-    var stand=(out&&Array.isArray(out.standings)?out.standings:[]).filter(function(x){return x&&x.team&&num(x.w)!=null&&num(x.l)!=null;});
-    var badStand=(out&&Array.isArray(out.standings)?out.standings.length:0)-stand.length;
-    if(!groups.length&&!stand.length){
+    var P=buildPending(out,issues);
+    if(!P.groups.length&&!P.stand.length&&!P.ps.length&&!P.pa.length&&!P.gpo.length){
       msg.textContent="Nothing was read.";
-      showReport("bad","Nothing could be read from these screenshots. Try a sharper, closer screenshot of a roster, contracts, picks or standings screen.",issues);
+      showReport("bad","Nothing could be read from these screenshots. Try a sharper, closer screenshot, and check the category you chose.",issues);
       return;
     }
-    S.players=S.players.filter(function(p){return !p.ex;});
-    var undo=S.settings.undoDelta?1:0, report=[], ids={}, seen=[], nrows=0;
-    groups.forEach(function(g){
-      var nm=g.name?String(g.name).trim():"", hit=nm?findTeamByName(nm):null, label, list, log, tid, created=false, holder;
-      if(!nm||(hit&&hit.active)){label=S.team.name; tid=S.team.id; list=S.players; log=S.ratingLog; holder=S;}
-      else if(hit){var o=S.others.filter(function(x){return x.id===hit.id;})[0]; label=o.name; tid=o.id; list=o.data.players; log=o.data.ratingLog; holder=o.data;}
-      else{var t={id:uid(),name:nm,data:blankTeamData()}; S.others.push(t); label=nm; tid=t.id; list=t.data.players; log=t.data.ratingLog; created=true; holder=t.data;}
-      var plrs=Array.isArray(g.players)?g.players:[], parts=[];
-      var res=applyRows(list,log,plrs,undo); ids[tid]=1; nrows+=res.added+res.upd;
-      if(plrs.length){touch(holder,"roster"); parts.push(res.added+" added, "+res.upd+" updated");}
-      if(Array.isArray(g.picks)&&g.picks.length){var pr=readPickRows(holder,g.picks,label,issues); if(pr.added||pr.same) touch(holder,"picks"); nrows+=pr.added; parts.push(pr.added+" picks added"+(pr.same?" ("+pr.same+" already there)":""));}
-      report.push(label+(created?" (new team)":"")+": "+parts.join(", ")+(!nm?" (no team name visible, so the open team)":""));
-      if(num(g.payroll)!=null) seen.push(label+" payroll "+m(num(g.payroll)));
-      if(res.skipped) issues.push({level:"bad",text:label+": "+res.skipped+" row"+(res.skipped>1?"s":"")+" had no readable player name and "+(res.skipped>1?"were":"was")+" skipped."});
-      res.miss.forEach(function(x){issues.push({level:x.fields.indexOf("salary")>=0?"bad":"warn",text:label+", "+x.name+": could not read "+x.fields.join(", ")+"."});});
-      res.notes.forEach(function(x){issues.push({level:"warn",text:label+", "+x.name+": "+x.note});});
-      (Array.isArray(g.unreadable)?g.unreadable:[]).forEach(function(t){if(t) issues.push({level:"warn",text:label+": "+String(t)});});
-    });
-    if(stand.length){
-      var now=new Date().toISOString(), ns=0, made=[];
-      stand.forEach(function(x){
-        var nm=String(x.team).trim(), hit=findTeamByName(nm);
-        if(!hit){var t=Object.assign({id:uid(),name:nm,data:blankTeamData()}); S.others.push(t); hit={id:t.id,name:nm}; made.push(nm);}
-        S.records[hit.id]={w:Math.max(0,Math.round(num(x.w))),l:Math.max(0,Math.round(num(x.l))),at:now}; ns++;
-      });
-      S.recordsAt=now; report.push("Standings: "+ns+" team"+(ns>1?"s":"")+" updated");
-      if(made.length) issues.push({level:"warn",text:"These standings teams were not in the league, so they were added as new teams: "+made.join(", ")+". If a name was misread, delete that team on the Teams tab."});
-      if(badStand>0) issues.push({level:"bad",text:badStand+" standings row"+(badStand>1?"s":"")+" had no readable team name or record and "+(badStand>1?"were":"was")+" skipped."});
-      nrows+=ns;
-    }
-    var tids=Object.keys(ids);
-    shots.forEach(function(x){URL.revokeObjectURL(x.url);}); shots=[];
-    save();
-    if(tids.length===1&&tids[0]!==S.team.id) switchTeam(tids[0]); else renderAll();
-    msg.textContent=report.join(". ")+"."+(seen.length?" Screens also showed "+seen.join(", ")+". Compare with your cap lines on the League tab.":"")+" Screenshots cleared.";
-    var nbad=issues.filter(function(i){return i.level==="bad";}).length;
-    if(!issues.length) showReport("good","Read "+nrows+" rows and every field was filled. Still compare the tagged rows against the screen.",[]);
-    else showReport(nbad?"bad":"warn",issues.length+" thing"+(issues.length>1?"s":"")+" could not be read or need a look. The rows are in the table, tagged with what is missing.",issues);
+    if(P.badStand>0) issues.push({level:"bad",text:P.badStand+" standings row"+(P.badStand>1?"s":"")+" had no readable team name or record and "+(P.badStand>1?"were":"was")+" skipped."});
+    pend=P; renderPreview();
+    msg.textContent="Read. Review the result below and press Apply.";
+    if(issues.length) showReport(issues.some(function(i){return i.level==="bad";})?"bad":"warn",issues.length+" thing"+(issues.length>1?"s":"")+" could not be read or need a look.",issues);
   }catch(e){
     var c=e&&e.code;
     var txt=c==="cancelled"?"Stopped.":
-      c==="not_granted"?"Reading screenshots was not allowed for this page. You can still enter contracts by hand.":
+      c==="not_granted"?"Reading screenshots was not allowed for this page. You can still enter data by hand.":
       c==="rate_limited"?"Too many requests or your usage limit was reached. Try again later.":
       c==="image_rejected"?"One of the images could not be read. Remove it or use a PNG or JPG under 20 MB.":
       c==="invalid_json"?"The reply could not be turned into rows. Try fewer screenshots at once, or a closer crop.":
@@ -1353,6 +1501,68 @@ async function readShots(){
   }finally{
     ctl=null; $("btn-stop").hidden=true; renderShots();
   }
+}
+function applyPending(){
+  if(!pend) return;
+  snap();
+  var P=pend, issues=P.issues.slice(), report=[], ids={}, nrows=0, undo=S.settings.undoDelta?1:0;
+  S.players=S.players.filter(function(p){return !p.ex;});
+  P.groups.forEach(function(G){
+    if(!G.on) return;
+    var g=G.g, T=resolveTarget(g.name), holder, created=false, label=T.label;
+    if(T.kind==="new"){var t={id:uid(),name:T.label,data:blankTeamData()}; S.others.push(t); holder=t.data; T.id=t.id; created=true;} else holder=T.d;
+    var plrs=Array.isArray(g.players)?g.players:[], parts=[];
+    var res=applyRows(holder.players,holder.ratingLog,plrs,undo); ids[T.id]=1; nrows+=res.added+res.upd;
+    if(plrs.length){touch(holder,"roster"); parts.push(res.added+" added, "+res.upd+" updated");}
+    if(Array.isArray(g.picks)&&g.picks.length){var pr=readPickRows(holder,g.picks,label,issues); if(pr.added||pr.same) touch(holder,"picks"); nrows+=pr.added; parts.push(pr.added+" picks added"+(pr.same?" ("+pr.same+" already there)":""));}
+    if(G.ts.length){mergeKV(holder.tstats,G.ts); touch(holder,"stats"); nrows+=G.ts.length; parts.push(G.ts.length+" team stats");}
+    report.push(label+(created?" (new team)":"")+": "+parts.join(", ")+(T.noname?" (no team name visible, so the open team)":""));
+    if(num(g.payroll)!=null) report[report.length-1]+=" (screen showed payroll "+m(num(g.payroll))+")";
+    if(res.skipped) issues.push({level:"bad",text:label+": "+res.skipped+" row"+(res.skipped>1?"s":"")+" had no readable player name and "+(res.skipped>1?"were":"was")+" skipped."});
+    res.miss.forEach(function(x){issues.push({level:x.fields.indexOf("salary")>=0?"bad":"warn",text:label+", "+x.name+": could not read "+x.fields.join(", ")+"."});});
+    res.notes.forEach(function(x){issues.push({level:"warn",text:label+", "+x.name+": "+x.note});});
+    (Array.isArray(g.unreadable)?g.unreadable:[]).forEach(function(t){if(t) issues.push({level:"warn",text:label+": "+String(t)});});
+  });
+  var st=P.stand.filter(function(X){return X.on;});
+  if(st.length){
+    var now=new Date().toISOString(), made=[];
+    st.forEach(function(X){
+      var nm=String(X.x.team).trim(), hit=findTeamByName(nm);
+      if(!hit){var t={id:uid(),name:nm,data:blankTeamData()}; S.others.push(t); hit={id:t.id,name:nm}; made.push(nm);}
+      S.records[hit.id]={w:Math.max(0,Math.round(num(X.x.w))),l:Math.max(0,Math.round(num(X.x.l))),at:now};
+    });
+    S.recordsAt=now; nrows+=st.length; report.push("Standings: "+st.length+" team"+(st.length>1?"s":"")+" updated");
+    if(made.length) issues.push({level:"warn",text:"These standings teams were not in the league, so they were added as new teams: "+made.join(", ")+". If a name was misread, delete that team on the Teams tab."});
+  }
+  var psn=0;
+  P.ps.forEach(function(X){
+    if(!X.on) return;
+    var c=findPlayers(String(X.x.player),X.x.team);
+    if(c.length!==1){issues.push({level:"bad",text:"Player stats for "+X.x.player+": "+(c.length?"several players match that name":"no player with that name was found")+", so they were skipped."});return;}
+    mergeKV(c[0].p.stats,X.kv); c[0].p.statsAt=new Date().toISOString(); touch(c[0].t.d,"pstats"); psn++; nrows+=X.kv.length;
+  });
+  if(psn) report.push("Player stats for "+psn+" player"+(psn>1?"s":""));
+  var pan=0;
+  P.pa.forEach(function(X){
+    if(!X.on) return;
+    var c=findPlayers(String(X.x.player),X.x.team);
+    if(c.length!==1){issues.push({level:"bad",text:"Attributes for "+X.x.player+": "+(c.length?"several players match that name":"no player with that name was found")+", so they were skipped."});return;}
+    mergeKV(c[0].p.attrs,X.kv); c[0].p.attrsAt=new Date().toISOString(); touch(c[0].t.d,"pattrs"); pan++; nrows+=X.kv.length;
+  });
+  if(pan) report.push("Attributes for "+pan+" player"+(pan>1?"s":""));
+  var gpn=0;
+  P.gpo.forEach(function(X){if(!X.on) return; S.gpOpts[X.f[0]]=X.opts.slice(); gpn++;});
+  if(gpn) report.push("Gameplan lists: "+gpn+" updated");
+  var tids=Object.keys(ids);
+  shots.forEach(function(x){URL.revokeObjectURL(x.url);}); shots=[]; pend=null;
+  logAct("Screenshot parse",report.join(". ")||"Nothing applied.");
+  save();
+  if(tids.length===1&&tids[0]!==S.team.id) switchTeam(tids[0]); else renderAll();
+  renderPreview(); renderShots();
+  $("read-msg").textContent=(report.join(". ")||"Nothing was applied")+". Screenshots cleared. Undo is on this page if needed.";
+  var nbad=issues.filter(function(i){return i.level==="bad";}).length;
+  if(!issues.length) showReport("good","Applied "+nrows+" items and every field was filled. Still compare the tagged rows against the screen.",[]);
+  else showReport(nbad?"bad":"warn",issues.length+" thing"+(issues.length>1?"s":"")+" could not be read or need a look.",issues);
 }
 
 /* ---------- export / import ---------- */
@@ -1401,9 +1611,9 @@ function renderTabs(){
 }
 
 /* ---------- TEAMS ---------- */
-var TEAM_KEYS=["players","rot","picks","targets","scen","ext","ratingLog","plan","plans","planBase","upd"];
+var TEAM_KEYS=["players","rot","picks","targets","scen","ext","ratingLog","plan","plans","planBase","upd","tstats"];
 function slug(n){return String(n||"team").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"")||"team";}
-function blankTeamData(){var d=defaults(); return {players:[],rot:{m:{},st:{},pp:{}},picks:[],targets:[],scen:[],ratingLog:[],ext:d.ext,plan:{},plans:[],planBase:"",upd:{}};}
+function blankTeamData(){var d=defaults(); return {players:[],rot:{m:{},st:{},pp:{}},picks:[],targets:[],scen:[],ratingLog:[],ext:d.ext,plan:{},plans:[],planBase:"",upd:{},tstats:[]};}
 function stashTeam(){var o={}; TEAM_KEYS.forEach(function(k){o[k]=S[k];}); return o;}
 function switchTeam(id){
   if(!id||id===S.team.id){renderTeamBar();return;}
@@ -1412,7 +1622,7 @@ function switchTeam(id){
   S.others=S.others.filter(function(x){return x!==o;}); S.others.push(cur);
   TEAM_KEYS.forEach(function(k){S[k]=o.data[k];});
   S.team={id:o.id,name:o.name};
-  outSet={}; lastFiller=[]; save(); renderAll();
+  outSet={}; lastFiller=[]; pend=pend; save(); renderAll();
 }
 function teamRow(id,name,list,active){
   var set=S.settings, pay=payOf(list,0), exp=0, top=null;
@@ -1425,23 +1635,34 @@ function teamRow(id,name,list,active){
 }
 function allTeams(){
   var rows=[teamRow(S.team.id,S.team.name,S.players,true)];
-  S.others.forEach(function(o){rows.push(teamRow(o.id,o.name,o.data.players||[],false));});
+  rows[0].picks=S.picks||[];
+  S.others.forEach(function(o){var r=teamRow(o.id,o.name,o.data.players||[],false); r.picks=o.data.picks||[]; rows.push(r);});
   return rows;
 }
 function renderTeamBar(){
   var rows=allTeams().sort(function(a,b){return a.name.localeCompare(b.name);});
   $("team-sel").innerHTML=rows.map(function(r){return '<option value="'+esc(r.id)+'"'+(r.active?" selected":"")+'>'+esc(r.name)+'</option>';}).join("");
   renderUpd();
-  $("roster-team").textContent="With no team name visible, screenshots go to "+S.team.name+" (the open team). A visible team name sends the rows to that team instead.";
+  $("roster-team").textContent="Open team: "+S.team.name+". Read screenshots on the Parsing tab. A team name visible on a screen sends the rows to that team, otherwise they go to the open team.";
+}
+function picksHtml(list){
+  var own=(list||[]).filter(function(p){return p.status!=="Traded away";});
+  if(!own.length) return '<span class="muted">none entered</span>';
+  var r1=own.filter(function(p){return String(p.round)==="1";}).length, r2=own.filter(function(p){return String(p.round)==="2";}).length;
+  var rows=own.slice().sort(function(a,b){return (a.year||0)-(b.year||0)||String(a.round).localeCompare(String(b.round));}).map(function(p){
+    return esc(p.year==null?"?":p.year)+" R"+esc(p.round)+" "+esc(p.team||"?")+(p.status==="Acquired"?" (acquired)":"")+(p.prot?" · "+esc(p.prot):(num(p.protN)>0?" · top "+esc(p.protN)+" protected":""))+(p.swap==="Yes"?" · swap with "+esc(p.swapWith||"?"):"");
+  });
+  return '<details><summary>'+own.length+' pick'+(own.length>1?"s":"")+' ('+r1+' R1, '+r2+' R2)</summary><div style="font-size:12px;line-height:1.5;margin-top:4px">'+rows.join("<br>")+'</div></details>';
 }
 function renderTeams(){
   var L=labels();
   var rows=allTeams().sort(function(a,b){return (a.empty-b.empty)||(b.space-a.space);});
-  var h='<thead><tr><th class="l">Team</th><th>Players</th><th>Payroll '+esc(L[0])+'</th><th>Cap space</th><th>Room to tax line</th><th>Expiring after</th><th class="l">Best player</th><th class="l">Last updated</th><th></th></tr></thead><tbody>';
+  var h='<thead><tr><th class="l">Team</th><th>Players</th><th>Payroll '+esc(L[0])+'</th><th>Cap space</th><th>Room to tax line</th><th>Expiring after</th><th class="l">Best player</th><th class="l">Draft picks</th><th class="l">Last updated</th><th></th></tr></thead><tbody>';
   rows.forEach(function(r){
     h+='<tr><td class="l"><strong>'+esc(r.name)+'</strong>'+(r.active?' <span class="badge ex">open</span>':'')+(r.empty?' <span class="badge">no data</span>':'')+'</td>'+
       (r.empty?'<td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td class="l">—</td>':
       '<td>'+r.n+'</td><td>'+m(r.pay)+'</td><td class="'+sgn(r.space)+'">'+m(r.space)+'</td><td class="'+sgn(r.taxRoom)+'">'+m(r.taxRoom)+'</td><td>'+(r.exp?m(r.exp):"—")+'</td><td class="l">'+(r.top?esc(r.top.name||"Unnamed")+' <span class="muted">'+r.top.ovr+' OVR</span>':"—")+'</td>')+
+      '<td class="l">'+picksHtml(r.picks)+'</td>'+
       '<td class="l" style="font-size:12px;line-height:1.5">'+updHtml(r.id)+'</td>'+
       '<td>'+(r.active?"":'<button type="button" data-open="'+esc(r.id)+'">Open</button> <button type="button" data-tdel="'+esc(r.id)+'" aria-label="Delete '+esc(r.name)+'">×</button>')+'</td></tr>';
   });
@@ -1453,7 +1674,7 @@ function renderAbsorb(){
   var sal=num($("ab-sal").value)||0, set=S.settings, box=$("ab-out");
   if(!sal){box.innerHTML='<p class="muted">Enter a salary to see which teams could take it.</p>';return;}
   var rows=allTeams().filter(function(r){return !r.active&&!r.empty;}).sort(function(a,b){return b.space-a.space;});
-  if(!rows.length){box.innerHTML='<p class="muted">No other team has data yet. Add a team on this tab, open it, and paste its screenshots on the Roster tab.</p>';return;}
+  if(!rows.length){box.innerHTML='<p class="muted">No other team has data yet. Add a team on this tab, open it, and paste its screenshots on the Parsing tab.</p>';return;}
   var h='<div class="scroll"><table class="ytable"><thead><tr><th class="l">Team</th><th>Cap space</th><th class="l">Result</th></tr></thead><tbody>';
   rows.forEach(function(r){
     h+='<tr><td class="l">'+esc(r.name)+'</td><td class="'+sgn(r.space)+'">'+m(r.space)+'</td><td class="l">'+(r.space>=sal?'<span class="pill ok">can absorb</span>':'<span class="pill na">needs salary back</span> must send at least '+m(minOut(r.pay,sal),2))+'</td></tr>';
@@ -1468,7 +1689,7 @@ function addTeam(){
   if(all.length>=30){msg.textContent="The league is limited to 30 teams here.";return;}
   var t={id:uid(),name:nm,data:blankTeamData()}; S.others.push(t); el.value="";
   switchTeam(t.id);
-  $("tm-msg").textContent="Added "+nm+" and opened it. Paste its screenshots on the Roster tab.";
+  $("tm-msg").textContent="Added "+nm+" and opened it. Paste its screenshots on the Parsing tab.";
 }
 function renameTeam(){
   var el=$("tm-name"), nm=(el.value||"").trim(), msg=$("tm-msg");
@@ -1497,11 +1718,11 @@ function fmtAt(iso){
 function updOf(id){
   var d=id===S.team.id?S:(S.others.filter(function(x){return x.id===id;})[0]||{}).data||{};
   var u=d.upd||{}, r=S.records[id]||{};
-  return {roster:u.roster||"",picks:u.picks||"",stand:r.at||""};
+  return {roster:u.roster||"",picks:u.picks||"",stand:r.at||"",stats:u.stats||"",pstats:u.pstats||"",pattrs:u.pattrs||""};
 }
 function updHtml(id){
   var u=updOf(id);
-  return "Roster: "+esc(fmtAt(u.roster))+"<br>Picks: "+esc(fmtAt(u.picks))+"<br>Standings: "+esc(fmtAt(u.stand));
+  return "Roster: "+esc(fmtAt(u.roster))+"<br>Picks: "+esc(fmtAt(u.picks))+"<br>Standings: "+esc(fmtAt(u.stand))+"<br>Team stats: "+esc(fmtAt(u.stats))+"<br>Player stats: "+esc(fmtAt(u.pstats))+"<br>Player attributes: "+esc(fmtAt(u.pattrs));
 }
 function renderUpd(){
   var u=updOf(S.team.id);
@@ -1568,36 +1789,51 @@ function tbMoves(T){
 function moveText(list){
   return list.map(function(mv){return mv.type==="pl"?(mv.item.name||"Unnamed")+" ("+m(mv.item.sal[0]||0)+")":(mv.item.year==null?"?":mv.item.year)+" round "+mv.item.round+" pick ("+(mv.item.team||"")+")";}).join(", ")||"nothing";
 }
+function firstsHeld(d){return (d.picks||[]).filter(function(p){return p.status!=="Traded away"&&String(p.round)==="1";}).length;}
+function validateTrade(T,moves){
+  var s=S.settings, allOk=true, rows=[];
+  T.forEach(function(t){
+    var sends=moves.filter(function(mv){return mv.from===t.id;}), recvs=moves.filter(function(mv){return mv.to===t.id;}), involved=sends.length+recvs.length>0;
+    function sal(list){return list.reduce(function(a,mv){return a+(mv.type==="pl"?(mv.item.sal[0]||0):0);},0);}
+    var out=sal(sends), inc=sal(recvs), pay=payOf(t.d.players,0), tr=tradeRule(pay,out,inc);
+    function f1(list){return list.filter(function(mv){return mv.type==="pk"&&String(mv.item.round)==="1";});}
+    var phantomOut=f1(sends).filter(function(mv){return mv.item._phantom;}).length;
+    var tracked=(t.d.picks||[]).length>0||phantomOut>0;
+    var before=firstsHeld(t.d)+phantomOut, after=before-f1(sends).length+f1(recvs).length;
+    var firstsOk=tracked?after>=s.minFirsts:null;
+    if(involved&&(!tr.ok||firstsOk===false)) allOk=false;
+    rows.push({t:t,sends:sends,recvs:recvs,involved:involved,out:out,inc:inc,pay:pay,tr:tr,tracked:tracked,before:before,after:after,firstsOk:firstsOk,startLow:tracked&&after<s.minFirstsStart});
+  });
+  return {rows:rows,allOk:allOk};
+}
+function tradeSummaryHtml(T,moves){
+  var v=validateTrade(T,moves), s=S.settings;
+  var h='<div class="scroll"><table class="ytable"><thead><tr><th class="l">Team</th><th class="l">Sends</th><th class="l">Receives</th><th>Out</th><th>In</th><th>Payroll after</th><th>Cap space after</th><th class="l">Salary rule</th><th class="l">First-round picks</th></tr></thead><tbody>';
+  v.rows.forEach(function(r){
+    var t=r.t, tr=r.tr, rule, fr;
+    if(!r.involved) rule='<span class="pill no" style="background:var(--surface2);color:var(--muted)">not in the trade</span>';
+    else if(tr.ok) rule='<span class="pill ok">legal</span> '+(tr.endsUnder?"ends under the cap":"within "+m(tr.maxIn)+" ("+tr.k+"% more, "+(tr.under?"under":"at or over")+" the cap before)");
+    else rule='<span class="pill no">fails</span> may take back at most '+m(tr.maxIn)+'; send out at least '+m(minOut(r.pay,r.inc),2);
+    if(!r.involved) fr='—';
+    else if(!r.tracked) fr='<span class="pill na">no picks entered</span>';
+    else fr=r.before+' → '+r.after+' '+(r.firstsOk?'<span class="pill ok">at least '+s.minFirsts+'</span>':'<span class="pill no">needs at least '+s.minFirsts+'</span>')+(r.firstsOk&&r.startLow?' <span class="pill warn">below '+s.minFirstsStart+' for the season start</span>':'');
+    h+='<tr><td class="l"><strong>'+esc(t.name)+'</strong>'+(t.d.players.length?'':' <span class="badge">no roster data</span>')+'</td><td class="l">'+esc(moveText(r.sends))+'</td><td class="l">'+esc(moveText(r.recvs))+'</td><td>'+m(r.out)+'</td><td>'+m(r.inc)+'</td><td>'+m(tr.np)+'</td><td class="'+sgn(s.cap-tr.np)+'">'+m(s.cap-tr.np)+'</td><td class="l">'+rule+'</td><td class="l">'+fr+'</td></tr>';
+  });
+  return {html:h+'</tbody></table></div>',allOk:v.allOk};
+}
 function renderTBSum(T){
   var moves=tbMoves(T), box=$("tb-sum"), btn=$("btn-tb-apply");
   if(T.length<2){box.innerHTML='<div class="banner">Pick at least two different teams.</div>';btn.disabled=true;return;}
   if(!moves.length){box.innerHTML='<div class="banner">Choose a destination for at least one player or pick.</div>';btn.disabled=true;return;}
-  var allOk=true;
-  var h='<div class="scroll"><table class="ytable"><thead><tr><th class="l">Team</th><th class="l">Sends</th><th class="l">Receives</th><th>Out</th><th>In</th><th>Payroll after</th><th>Cap space after</th><th class="l">Rule</th></tr></thead><tbody>';
-  T.forEach(function(t){
-    var sends=moves.filter(function(mv){return mv.from===t.id;}), recvs=moves.filter(function(mv){return mv.to===t.id;});
-    function sal(list){return list.reduce(function(a,mv){return a+(mv.type==="pl"?(mv.item.sal[0]||0):0);},0);}
-    var out=sal(sends), inc=sal(recvs), pay=payOf(t.d.players,0), tr=tradeRule(pay,out,inc), involved=sends.length||recvs.length;
-    if(involved&&!tr.ok) allOk=false;
-    var rule;
-    if(!involved) rule='<span class="pill no">not in the trade</span>';
-    else if(tr.ok) rule='<span class="pill ok">legal</span> '+(tr.endsUnder?"ends under the cap":"within "+m(tr.maxIn)+" ("+tr.k+"% more, "+(tr.under?"under":"at or over")+" the cap before)");
-    else rule='<span class="pill no">fails</span> may take back at most '+m(tr.maxIn)+'; send out at least '+m(minOut(pay,inc),2);
-    h+='<tr><td class="l"><strong>'+esc(t.name)+'</strong>'+(t.d.players.length?'':' <span class="badge">no roster data</span>')+'</td><td class="l">'+esc(moveText(sends))+'</td><td class="l">'+esc(moveText(recvs))+'</td><td>'+m(out)+'</td><td>'+m(inc)+'</td><td>'+m(tr.np)+'</td><td class="'+sgn(S.settings.cap-tr.np)+'">'+m(S.settings.cap-tr.np)+'</td><td class="l">'+rule+'</td></tr>';
-  });
-  h+='</tbody></table></div>';
-  box.innerHTML=(allOk?'<div class="banner good" style="margin-bottom:10px"><strong>Every team passes.</strong> Picks carry no salary, so they do not change the check.</div>':'<div class="banner bad" style="margin-bottom:10px"><strong>This trade is not legal yet.</strong> Fix the teams marked below.</div>')+h;
-  btn.disabled=!allOk;
+  var r=tradeSummaryHtml(T,moves);
+  box.innerHTML=(r.allOk?'<div class="banner good" style="margin-bottom:10px"><strong>Every team passes.</strong> Picks carry no salary, so they only count for the first-round pick rule.</div>':'<div class="banner bad" style="margin-bottom:10px"><strong>This trade is not legal yet.</strong> Fix the teams marked below.</div>')+r.html;
+  btn.disabled=!r.allOk;
 }
 function renderTBHist(){
   var rows=S.trades.slice(-10).reverse();
   $("tb-hist").innerHTML=rows.length?'<ul class="list">'+rows.map(function(r){return '<li><span class="a">'+esc(r.text)+'</span><span class="b">'+esc(r.t)+' · '+esc(r.season)+'</span></li>';}).join("")+'</ul>':'<p class="muted">No trades made with the builder yet.</p>';
 }
-function applyTrade(){
-  var T=tbTeams(), moves=tbMoves(T), btn=$("btn-tb-apply");
-  if(!moves.length) return;
-  if(!armed.tb){armed.tb=1; btn.textContent="Click again to make the trade"; setTimeout(function(){delete armed.tb; btn.textContent="Make this trade";},4000); return;}
-  delete armed.tb; btn.textContent="Make this trade";
+function executeTrade(T,moves){
   var byId={}; T.forEach(function(t){byId[t.id]=t;});
   moves.forEach(function(mv){
     var from=byId[mv.from], to=byId[mv.to];
@@ -1610,13 +1846,122 @@ function applyTrade(){
       var np=clone(mv.item); if(to.d.players.some(function(p){return p.id===np.id;})) np.id=uid();
       np.note=(np.note?np.note+"; ":"")+"Traded from "+from.name; np.ex=0; to.d.players.push(np);
     } else {
+      if(mv.item._phantom){delete mv.item._phantom; from.d.picks.push(mv.item);}
       mv.item.status="Traded away";
-      var pk=clone(mv.item); pk.id=uid(); pk.status="Acquired"; pk.note=(pk.note?pk.note+"; ":"")+"From "+from.name; to.d.picks.push(pk);
+      var pk=clone(mv.item); pk.id=uid(); pk.status="Acquired"; pk.note=(pk.note?pk.note+"; ":"")+"From "+from.name;
+      if(mv.set){
+        if(mv.set.prot) pk.prot=mv.set.prot;
+        if(mv.set.protN!=null) pk.protN=mv.set.protN;
+        if(mv.set.swap){pk.swap="Yes"; pk.swapWith=mv.set.swapWith||pk.swapWith||"";}
+      }
+      to.d.picks.push(pk);
     }
   });
   var text=T.map(function(t){var r=moves.filter(function(mv){return mv.to===t.id;}); return r.length?t.name+" gets "+moveText(r):"";}).filter(Boolean).join("; ");
   S.trades.push({t:today(),season:S.settings.season,text:text}); if(S.trades.length>100) S.trades=S.trades.slice(-100);
+  logAct("Trade",text);
+  return text;
+}
+function applyTrade(){
+  var T=tbTeams(), moves=tbMoves(T), btn=$("btn-tb-apply");
+  if(!moves.length) return;
+  if(!armed.tb){armed.tb=1; btn.textContent="Click again to make the trade"; setTimeout(function(){delete armed.tb; btn.textContent="Make this trade";},4000); return;}
+  delete armed.tb; btn.textContent="Make this trade";
+  snap();
+  var text=executeTrade(T,moves);
   tb.assets={}; save(); renderAll(); $("tb-msg").textContent="Trade made. "+text;
+}
+
+/* ---------- TRADE PARSER ---------- */
+var tp=null;
+function tradePrompt(text){
+  return "Read this NBA trade from a sim league chat and reply with only one JSON object of this shape:\n"+
+  '{"moves":[{"type":"player","name":"First Last","from":"Dallas Mavericks","to":"Boston Celtics"},{"type":"pick","year":2027,"round":1,"original_team":"Dallas","from":"Dallas Mavericks","to":"Boston Celtics","protection":"","top_protected":null,"swap":false,"swap_with":null}],"other":["cash or anything that is not a player or a pick"],"problems":[]}\n'+
+  "Rules:\n- One move per player or pick. from is the team that sends it and to is the team that receives it. Use the team names as written in the text.\n"+
+  "- For a pick, original_team is the team the pick belongs to. If the text says 'their 2027 first' it is the sending team. round is 1 or 2.\n"+
+  "- top_protected is N when the pick is protected in the top N, otherwise null. protection is any other protection text. swap is true when the text gives swap rights, and swap_with is the other team.\n"+
+  "- Put cash, trade exceptions and anything else in other. Put anything unclear in problems. Never invent players, picks or teams.\n\nTrade text:\n"+text;
+}
+function samePickTeam(a,b){
+  if(!a||!b) return false;
+  if(normTeamName(a)===normTeamName(b)) return true;
+  var x=findTeamByName(a), y=findTeamByName(b); if(x&&y) return x.id===y.id;
+  return matchesTeam(a,b)||matchesTeam(b,a);
+}
+function resolveTrade(out,text){
+  var problems=[], seen={}, T=[], moves=[];
+  function team(nm){
+    var h=nm?findTeamByName(String(nm)):null;
+    if(!h){problems.push({level:"bad",text:"The team '"+nm+"' is not in the league. Add it on the Teams tab first."});return null;}
+    if(!seen[h.id]){seen[h.id]=1; T.push(tdata(h.id));}
+    return h.id;
+  }
+  (out&&Array.isArray(out.moves)?out.moves:[]).forEach(function(mv){
+    if(!mv) return;
+    var from=team(mv.from), to=team(mv.to); if(!from||!to) return;
+    if(from===to){problems.push({level:"bad",text:"A move has the same team on both sides ("+tdata(from).name+")."});return;}
+    var f=tdata(from);
+    if(mv.type==="player"){
+      var c=f.d.players.filter(function(p){return p.kind==="Contract"&&sameName(p.name,mv.name);});
+      if(c.length===1) moves.push({from:from,to:to,type:"pl",item:c[0]});
+      else problems.push({level:"bad",text:(c.length?"Several players match ":"Could not find ")+"'"+mv.name+"' on "+f.name+"."});
+    } else if(mv.type==="pick"){
+      var yr=num(mv.year), rd=num(mv.round);
+      if(yr==null||rd==null){problems.push({level:"bad",text:"A pick in the trade has no readable year or round."});return;}
+      var pk=(f.d.picks||[]).filter(function(p){return p.status!=="Traded away"&&p.year===yr&&String(p.round)===String(rd)&&samePickTeam(mv.original_team,p.team);})[0];
+      var set={prot:mv.protection?String(mv.protection):"",protN:num(mv.top_protected),swap:!!mv.swap,swapWith:mv.swap_with?String(mv.swap_with):""};
+      if(!pk){
+        if(samePickTeam(mv.original_team,f.name)||!mv.original_team){
+          pk={id:uid(),year:yr,round:String(rd),team:f.name,status:"Own",prot:"",protN:null,swap:"No",swapWith:"",note:"Added by the trade parser because it was not in the ledger",_phantom:true};
+          problems.push({level:"warn",text:f.name+"'s "+yr+" round "+rd+" pick was not in its ledger. It will be added and then traded."});
+        } else {problems.push({level:"bad",text:f.name+" does not hold a "+yr+" round "+rd+" pick from "+mv.original_team+" in its ledger."});return;}
+      }
+      moves.push({from:from,to:to,type:"pk",item:pk,set:set});
+    }
+  });
+  (out&&Array.isArray(out.other)?out.other:[]).forEach(function(t){if(t) problems.push({level:"warn",text:"Not handled by the page: "+String(t)+". Settle it by hand."});});
+  (out&&Array.isArray(out.problems)?out.problems:[]).forEach(function(t){if(t) problems.push({level:"warn",text:String(t)});});
+  if(!moves.length&&!problems.some(function(p){return p.level==="bad";})) problems.push({level:"bad",text:"No player or pick moves were found in the text."});
+  if(T.length>4) problems.push({level:"bad",text:"The trade involves "+T.length+" teams. The page handles at most 4."});
+  return {out:out,text:text,T:T,moves:moves,problems:problems};
+}
+function renderTP(){
+  var box=$("tp-box"); if(!tp){box.innerHTML="";return;}
+  var hard=tp.problems.some(function(p){return p.level==="bad";}), h="";
+  if(tp.problems.length) h+='<div class="banner '+(hard?"bad":"warn")+'" style="margin-bottom:10px"><strong>'+tp.problems.length+' thing'+(tp.problems.length>1?"s":"")+' to check</strong><ul class="rep-list">'+tp.problems.map(function(p){return '<li class="'+p.level+'">'+esc(p.text)+'</li>';}).join("")+'</ul></div>';
+  if(tp.moves.length&&tp.T.length>=2){
+    var r=tradeSummaryHtml(tp.T,tp.moves), blocked=hard||!r.allOk;
+    h+=(r.allOk?'<div class="banner good" style="margin-bottom:10px"><strong>Every team passes.</strong></div>':'<div class="banner bad" style="margin-bottom:10px"><strong>This trade fails the check.</strong> See the teams marked below.</div>')+r.html;
+    h+='<div class="toolbar" style="margin-top:10px;align-items:center">'+
+      (!hard&&!r.allOk?'<label class="chk" for="tp-over" style="display:flex;gap:8px;align-items:center"><input id="tp-over" type="checkbox"> Apply it anyway (commissioner override)</label>':'')+
+      '<button id="btn-tp-apply" class="primary" type="button"'+(blocked?" disabled":"")+'>Apply this trade</button></div>';
+  }
+  box.innerHTML=h;
+}
+async function readTrade(){
+  var txt=($("tp-text").value||"").trim(), msg=$("tp-msg");
+  if(!txt){msg.textContent="Paste the trade text first.";return;}
+  if(!sampleFn){msg.textContent="Reading a trade uses Claude and is limited to the owner of this page.";return;}
+  ctl=new AbortController(); $("btn-tp-read").disabled=true; msg.textContent="Reading the trade…"; tp=null; renderTP();
+  try{
+    var out=await sampleFn.json(tradePrompt(txt),{signal:ctl.signal,modelTier:"default"});
+    tp=resolveTrade(out,txt); renderTP();
+    msg.textContent=tp.moves.length?"Read "+tp.moves.length+" move"+(tp.moves.length>1?"s":"")+". Check the result below, then apply.":"No moves could be matched.";
+  }catch(e){
+    var c=e&&e.code;
+    msg.textContent=c==="rate_limited"?"Too many requests or your usage limit was reached. Try again later.":c==="not_granted"?"Reading was not allowed for this page.":c==="invalid_json"?"The reply could not be understood. Try rewording the trade text.":"Could not read the trade"+(e&&e.message?" ("+e.message+")":"")+".";
+  }finally{ctl=null; $("btn-tp-read").disabled=false;}
+}
+function applyParsedTrade(){
+  if(!tp||!tp.moves.length) return;
+  var btn=$("btn-tp-apply"); if(!btn||btn.disabled) return;
+  if(!armed.tp){armed.tp=1; btn.textContent="Click again to apply"; setTimeout(function(){delete armed.tp; if($("btn-tp-apply")) $("btn-tp-apply").textContent="Apply this trade";},4000); return;}
+  delete armed.tp;
+  snap();
+  var over=$("tp-over")&&$("tp-over").checked, text=executeTrade(tp.T,tp.moves);
+  if(over) logAct("Override","The trade above was applied although it failed the check.");
+  tp=null; $("tp-text").value=""; save(); renderAll(); renderTP();
+  $("tp-msg").textContent="Trade applied. "+text+(over?" (override)":"");
 }
 
 /* ---------- EXCEL IMPORT ---------- */
@@ -1694,7 +2039,7 @@ function applyPicks(d,pk,teamName,replace,issues){
     if(y==null||!t||rd==null){issues.push({level:"warn",text:"Picks sheet row "+(r+1)+" is incomplete and was skipped."});continue;}
     if(!replace&&d.picks.some(function(x){return x.year===y&&String(x.round)===String(rd)&&(x.team||"").toLowerCase()===t.toLowerCase();})) continue;
     var special=/[\/]|worst|best|lesser|greater/i.test(t), own=!special&&matchesTeam(t,teamName);
-    d.picks.push({id:uid(),year:y,round:String(rd),team:t,status:own?"Own":"Acquired",prot:"",note:special?"Check how this pick is protected. The workbook says: "+t:""});
+    d.picks.push({id:uid(),year:y,round:String(rd),team:t,status:own?"Own":"Acquired",prot:"",protN:null,swap:"No",swapWith:"",note:special?"Check how this pick is protected. The workbook says: "+t:""});
     n++;
   }
   return n;
@@ -1704,10 +2049,19 @@ function readPickRows(d,rows,teamName,issues){
   rows.forEach(function(r,i){
     var y=num(r&&r.year), rd=num(r&&r.round), t=r&&r.team?String(r.team).trim():"";
     if(y==null||rd==null||!t){issues.push({level:"bad",text:teamName+": pick "+(i+1)+" is missing "+[y==null?"year":"",rd==null?"round":"",!t?"original team":""].filter(Boolean).join(", ")+", so it was skipped."});return;}
+    var pn=num(r.top_protected), prot=r.protection?String(r.protection):"";
+    if(pn==null){var mm=/top[\s-]*(\d+)/i.exec(prot); if(mm) pn=+mm[1];}
+    var sw=!!r.swap, swW=r.swap_with?String(r.swap_with):"";
     var dup=d.picks.filter(function(x){return x.year===y&&String(x.round)===String(rd)&&(x.team||"").toLowerCase()===t.toLowerCase();})[0];
-    if(dup){same++; if(r.protection&&!dup.prot) dup.prot=String(r.protection); return;}
+    if(dup){
+      same++;
+      if(prot&&!dup.prot) dup.prot=prot;
+      if(pn!=null&&dup.protN==null) dup.protN=pn;
+      if(sw&&dup.swap!=="Yes"){dup.swap="Yes"; dup.swapWith=swW||dup.swapWith||"";}
+      return;
+    }
     var own=matchesTeam(t,teamName), note=r.note?String(r.note):"";
-    d.picks.push({id:uid(),year:y,round:String(rd),team:t,status:own?"Own":"Acquired",prot:r.protection?String(r.protection):"",note:note});
+    d.picks.push({id:uid(),year:y,round:String(rd),team:t,status:own?"Own":"Acquired",prot:prot,protN:pn,swap:sw?"Yes":"No",swapWith:sw?swW:"",note:note});
     if(note) issues.push({level:"warn",text:teamName+", "+y+" round "+rd+" pick: "+note});
     added++;
   });
@@ -1749,6 +2103,7 @@ function renderXl(){
 }
 function doImport(){
   if(!xl) return;
+  snap();
   var P=xl.parsed, c=P.contracts[xl.sel], issues=[], target=$("xl-target").value, replace=$("xl-mode").value==="replace", holder, label, newTeam=null;
   if(target==="__new__"){
     var nm=($("xl-newname").value||"").trim()||c.sheet;
@@ -1770,6 +2125,7 @@ function doImport(){
   if(tid!==S.team.id) switchTeam(tid); else renderAll();
   var nbad=issues.filter(function(i){return i.level==="bad";}).length;
   var head="Imported "+res.added+" new and "+res.upd+" updated players into "+label+(P.depth?", minutes for "+nd+" players":"")+(P.picks?", "+np+" picks":"")+" from "+fileName+".";
+  logAct("Excel import",head);
   if(!issues.length) showReport("good",head+" Everything was read.",[],"xl-report");
   else showReport(nbad?"bad":"warn",head+" "+issues.length+" thing"+(issues.length>1?"s":"")+" need a look.",issues,"xl-report");
 }
@@ -1780,9 +2136,10 @@ var GP_TEXT=[["playbook","Playbook",["Defense","Pace and Space"]],["offFocus","O
 function gpVal(plan,k){var v=plan[k]; return v==null?"":String(v).trim();}
 function renderGP(){
   var h=GP_SLIDERS.map(function(f){return '<label for="gp-'+f[0]+'">'+f[1]+'<input id="gp-'+f[0]+'" data-gp="'+f[0]+'" type="number" min="0" max="100" step="1" value="'+esc(gpVal(S.plan,f[0]))+'"></label>';}).join("");
-  h+=GP_TEXT.map(function(f){return '<label for="gp-'+f[0]+'">'+f[1]+'<input id="gp-'+f[0]+'" data-gp="'+f[0]+'" type="text" list="dl-'+f[0]+'" value="'+esc(gpVal(S.plan,f[0]))+'" style="font-family:var(--f-body)"><datalist id="dl-'+f[0]+'">'+f[2].map(function(o){return '<option value="'+esc(o)+'">';}).join("")+'</datalist></label>';}).join("");
+  h+=GP_TEXT.map(function(f){return '<label for="gp-'+f[0]+'">'+f[1]+'<input id="gp-'+f[0]+'" data-gp="'+f[0]+'" type="text" list="dl-'+f[0]+'" value="'+esc(gpVal(S.plan,f[0]))+'" style="font-family:var(--f-body)"><datalist id="dl-'+f[0]+'">'+gpList(f).map(function(o){return '<option value="'+esc(o)+'">';}).join("")+'</datalist></label>';}).join("");
   h+='<label for="gp-note">Opponent or note<input id="gp-note" data-gp="note" type="text" value="'+esc(gpVal(S.plan,"note"))+'" style="font-family:var(--f-body)"></label>';
   $("gp-form").innerHTML=h;
+  renderGPOpts();
   renderGPOut();
 }
 function planText(plan){
@@ -1848,24 +2205,45 @@ function lotteryCalc(){
   var odds=String(s.lotteryOdds).split(/[,;\s]+/).map(Number).filter(function(x){return isFinite(x)&&x>0;});
   if(odds.length<N) return {err:"The odds list has "+odds.length+" values but the lottery has "+N+" teams. Fix it on the League tab."};
   var K=Math.max(0,Math.min(5,Math.round(s.lotteryPicks)||0,N)), lot=teams.slice(0,N), w=odds.slice(0,N);
-  var dist=lot.map(function(){return new Array(N+1).fill(0);});
+  var dist=lot.map(function(){return new Array(N+1).fill(0);}), seqs=[];
   (function rec(depth,used,prob,seq){
     var i;
     if(depth===K){
-      var pos=new Array(N), nonw=0;
-      for(i=0;i<K;i++) pos[seq[i]]=i+1;
-      for(i=0;i<N;i++){ if(pos[i]===undefined){nonw++; pos[i]=K+nonw;} }
+      var pos=new Int8Array(N), nonw=0, set=new Array(N);
+      for(i=0;i<K;i++) set[seq[i]]=i+1;
+      for(i=0;i<N;i++){ if(set[i]===undefined){nonw++; set[i]=K+nonw;} pos[i]=set[i]; }
       for(i=0;i<N;i++) dist[i][pos[i]]+=prob;
+      seqs.push({p:prob,pos:pos});
       return;
     }
     var tot=0; for(i=0;i<N;i++) if(!used[i]) tot+=w[i];
     for(i=0;i<N;i++) if(!used[i]){used[i]=1; seq[depth]=i; rec(depth+1,used,prob*w[i]/tot,seq); used[i]=0;}
   })(0,[],1,[]);
+  var idx={}, restPos={};
   lot.forEach(function(t,i){
+    idx[t.id]=i;
     var exp=0,min=0,max=0,best=1; for(var p=1;p<=N;p++){var pr=dist[i][p]; exp+=pr*p; if(pr>1e-9){if(!min) min=p; max=p;} if(pr>dist[i][best]) best=p;}
     t.seed=i+1; t.dist=dist[i]; t.p1=dist[i][1]; t.pK=K?dist[i].slice(1,K+1).reduce(function(a,b){return a+b;},0):t.p1; t.exp=exp; t.min=min; t.max=max; t.best=best;
   });
-  return {lot:lot,N:N,K:K,rest:teams.slice(N)};
+  var rest=teams.slice(N); rest.forEach(function(t,i){restPos[t.id]=N+1+i;});
+  return {lot:lot,N:N,K:K,rest:rest,seqs:seqs,idx:idx,restPos:restPos};
+}
+/* What a round-1 pick is worth to the team holding it, with its swap and protection. */
+function evalPick(c,p){
+  var T=findTeamByName(p.team); if(!T) return {err:"The original team '"+(p.team||"?")+"' is not in the league."};
+  var W=(p.swap==="Yes"&&p.swapWith)?findTeamByName(p.swapWith):null;
+  if(p.swap==="Yes"&&p.swapWith&&!W) return {err:"The swap team '"+p.swapWith+"' is not in the league."};
+  function posOf(id,sq){ if(c.idx[id]!==undefined) return sq.pos[c.idx[id]]; if(c.restPos[id]!==undefined) return c.restPos[id]; return null; }
+  if(posOf(T.id,c.seqs[0])==null) return {err:T.name+" has no record entered yet."};
+  if(W&&posOf(W.id,c.seqs[0])==null) return {err:W.name+" has no record entered yet."};
+  var n=num(p.protN)||0, conv=0, sum=0, top1=0, swapGain=0;
+  c.seqs.forEach(function(sq){
+    var a=posOf(T.id,sq), b=W?posOf(W.id,sq):a, fin=W?Math.min(a,b):a;
+    if(W&&b<a) swapGain+=sq.p;
+    if(n>0&&fin<=n) return;
+    conv+=sq.p; sum+=sq.p*fin; if(fin===1) top1+=sq.p;
+  });
+  return {conv:conv,exp:conv>0?sum/conv:null,p1:top1,swap:!!W,swapName:W?W.name:"",swapGain:swapGain,teamName:T.name,n:n};
 }
 function renderLottery(){
   var c=lotteryCalc(), box=$("lot-out"), mine=$("lot-mine");
@@ -1873,16 +2251,22 @@ function renderLottery(){
   function pct(x){return (x*100).toFixed(1)+"%";}
   var h='<table class="ytable"><thead><tr><th>Seed</th><th class="l">Team</th><th>Record</th><th>Win %</th><th>#1 pick</th><th>Top '+(c.K||1)+'</th><th>Expected pick</th><th>Range</th></tr></thead><tbody>';
   c.lot.forEach(function(t){h+='<tr><td>'+t.seed+'</td><td class="l"><strong>'+esc(t.name)+'</strong></td><td>'+t.w+"-"+t.l+'</td><td>'+t.pct.toFixed(3)+'</td><td>'+pct(t.p1)+'</td><td>'+pct(t.pK)+'</td><td>'+t.exp.toFixed(2)+'</td><td>'+t.min+(t.max!==t.min?" to "+t.max:"")+'</td></tr>';});
-  h+='</tbody></table>';
+  h+='</tbody></table><p class="src" style="margin-top:8px">The table is each team\'s own pick. Swaps and protections are applied in the panel below.</p>';
   if(c.rest.length) h+='<p class="src" style="margin-top:8px">Not in the lottery: '+c.rest.map(function(t){return esc(t.name)+" ("+t.w+"-"+t.l+")";}).join(", ")+'.</p>';
   box.innerHTML=h;
   var yr=seasonStart(), draft=yr==null?null:yr+1, mp=[];
   (S.picks||[]).forEach(function(p){
-    if(p.status==="Traded away"||String(p.round)!=="1"||(draft!=null&&p.year!==draft)) return;
-    var hit=findTeamByName(p.team), t=hit?c.lot.filter(function(x){return x.id===hit.id;})[0]:null;
-    mp.push('<li><span class="a">'+esc(p.year)+' round 1 pick from '+esc(p.team||"?")+(p.prot?' <span class="muted">('+esc(p.prot)+')</span>':'')+'</span><span class="b">'+(t?"expected pick "+t.exp.toFixed(1)+", #1 odds "+pct(t.p1):(hit?"not in the lottery":"team not matched"))+'</span></li>');
+    if(String(p.round)!=="1"||(draft!=null&&p.year!==draft)) return;
+    var away=p.status==="Traded away", special=(num(p.protN)>0)||p.swap==="Yes";
+    if(away&&!special) return;
+    var e=evalPick(c,p), tag=(num(p.protN)>0?" · top "+p.protN+" protected":"")+(p.swap==="Yes"?" · swap with "+(p.swapWith||"?"):"");
+    var right;
+    if(e.err) right=e.err;
+    else if(away) right="the other team gets it "+pct(e.conv)+" of the time, so you keep it "+pct(1-e.conv);
+    else right=(num(p.protN)>0?"you receive it "+pct(e.conv)+" of the time · ":"")+(e.exp==null?"never conveys":"expected pick "+e.exp.toFixed(1)+", #1 odds "+pct(e.p1))+(e.swap?" · swap gives the better pick "+pct(e.swapGain)+" of the time":"");
+    mp.push('<li><span class="a">'+esc(p.year)+' round 1 pick from '+esc(p.team||"?")+(away?" (traded away)":"")+'<span class="muted">'+esc(tag)+'</span></span><span class="b">'+esc(right)+'</span></li>');
   });
-  mine.innerHTML=mp.length?'<div class="panel" style="margin-bottom:14px"><h3 class="sub-h">First-round picks '+esc(S.team.name)+' holds for the '+esc(draft)+' draft</h3><ul class="list">'+mp.join("")+'</ul></div>':'';
+  mine.innerHTML=mp.length?'<div class="panel" style="margin-bottom:14px"><h3 class="sub-h">First-round picks of '+esc(S.team.name)+' for the '+esc(draft)+' draft, with swaps and protection</h3><ul class="list">'+mp.join("")+'</ul><p class="src" style="margin-top:6px">Protection means the holder only receives the pick if it lands outside the top N. With a swap, the holder gets the better of the two teams\' picks first, then protection is checked on that result. The odds assume the lottery settings on the League tab.</p></div>':'';
 }
 function onRecord(e){
   var k=e.target.getAttribute&&e.target.getAttribute("data-rec"); if(!k) return;
@@ -1895,44 +2279,220 @@ function onRecord(e){
 /* ---------- LEAGUE AUDIT ---------- */
 var AUDIT_COLS=[["total","Minutes"],["five","Starters"],["floor","Top floor"],["start","Top start"],["substart","Sub start"],["submin","Sub minutes"],["bench","Bench"],["pos","Position"]];
 function auditRows(){
+  var s=S.settings;
   return allTeams().sort(byname).map(function(r){
     var t=tdata(r.id), d=t.d, P=rotList(d.players), res=ruleChecks(P,d.rot||{m:{},st:{},pp:{}});
-    var pay=payOf(d.players,0), floorOk=pay>=S.settings.floor;
-    return {id:r.id,name:r.name,active:r.active,empty:!d.players.length,any:res.any,checks:res.checks,fails:res.fails+(d.players.length&&!floorOk?1:0),pay:pay,floorOk:floorOk};
+    var pay=payOf(d.players,0), floorOk=pay>=s.floor, picksIn=(d.picks||[]).length>0, n=firstsHeld(d);
+    var extra=[
+      {id:"firsts",t:"First-round picks",d:picksIn?"holds "+n+", needs at least "+s.minFirsts+" at all times":"no picks entered",ok:!picksIn||n>=s.minFirsts,na:!picksIn},
+      {id:"firstsStart",t:"First-round picks at the season start",d:picksIn?"holds "+n+", needs at least "+s.minFirstsStart+" by the start of the season":"no picks entered",ok:!picksIn||n>=s.minFirstsStart,na:!picksIn}
+    ];
+    var fails=res.fails+(d.players.length&&!floorOk?1:0)+extra.filter(function(x){return !x.ok&&!x.na;}).length;
+    return {id:r.id,name:r.name,active:r.active,empty:!d.players.length,any:res.any,rot:res.checks,extra:extra,checks:res.checks.concat(extra),fails:fails,pay:pay,floorOk:floorOk,picksIn:picksIn};
   });
 }
 function renderAudit(){
-  var rows=auditRows(), checked=rows.filter(function(r){return r.any;}), bad=checked.filter(function(r){return r.fails;});
-  $("audit-banner").innerHTML=!checked.length?'<div class="banner">No team has a rotation entered yet. Open a team, enter its minutes on the Rotation tab, and it will show here.</div>':
-    bad.length?'<div class="banner bad"><strong>'+bad.length+' of '+checked.length+' teams with a rotation break at least one rule.</strong> '+(rows.length-checked.length)+' team'+(rows.length-checked.length===1?" has":"s have")+' no rotation entered.</div>':
-    '<div class="banner good"><strong>All '+checked.length+' teams with a rotation pass.</strong> '+(rows.length-checked.length)+' team'+(rows.length-checked.length===1?" has":"s have")+' no rotation entered.</div>';
-  var h='<thead><tr><th class="l">Team</th>'+AUDIT_COLS.map(function(c){return '<th>'+c[1]+'</th>';}).join("")+'<th>Salary floor</th><th>Failed</th><th></th></tr></thead><tbody>';
+  var rows=auditRows(), data=rows.filter(function(r){return r.any||!r.empty||r.picksIn;}), bad=data.filter(function(r){return r.fails;});
+  $("audit-banner").innerHTML=!data.length?'<div class="banner">No team has data yet. Enter rosters, minutes or picks and they will show here.</div>':
+    bad.length?'<div class="banner bad"><strong>'+bad.length+' of '+data.length+' teams with data break at least one rule.</strong></div>':
+    '<div class="banner good"><strong>All '+data.length+' teams with data pass.</strong></div>';
+  function pill(ch,noText){return '<td><span class="pill '+(!ch||ch.na?"na":ch.ok?"ok":"no")+'">'+(!ch||ch.na?(noText||"n/a"):ch.ok?"pass":"fail")+'</span></td>';}
+  var h='<thead><tr><th class="l">Team</th>'+AUDIT_COLS.map(function(c){return '<th>'+c[1]+'</th>';}).join("")+'<th>Salary floor</th><th>First-round picks</th><th>Firsts at season start</th><th>Failed</th><th></th></tr></thead><tbody>';
   rows.forEach(function(r){
     h+='<tr><td class="l"><strong>'+esc(r.name)+'</strong>'+(r.active?' <span class="badge ex">open</span>':'')+'</td>';
-    AUDIT_COLS.forEach(function(c){
-      if(!r.any){h+='<td><span class="pill na">'+(c.id===AUDIT_COLS[0][0]?"no rotation":"–")+'</span></td>';return;}
-      var ch=r.checks.filter(function(x){return x.id===c[0];})[0];
-      h+='<td><span class="pill '+(ch.na?"na":ch.ok?"ok":"no")+'">'+(ch.na?"n/a":ch.ok?"pass":"fail")+'</span></td>';
+    AUDIT_COLS.forEach(function(c,i){
+      if(!r.any){h+='<td><span class="pill na">'+(i===0?"no rotation":"–")+'</span></td>';return;}
+      h+=pill(r.rot.filter(function(x){return x.id===c[0];})[0]);
     });
-    h+='<td>'+(r.empty?'<span class="pill na">no data</span>':'<span class="pill '+(r.floorOk?"ok":"no")+'">'+(r.floorOk?"pass":"below")+'</span>')+'</td><td>'+(r.any||!r.empty?r.fails:"—")+'</td><td>'+(r.active?"":'<button type="button" data-aopen="'+esc(r.id)+'">Open</button>')+'</td></tr>';
+    h+='<td>'+(r.empty?'<span class="pill na">no data</span>':'<span class="pill '+(r.floorOk?"ok":"no")+'">'+(r.floorOk?"pass":"below")+'</span>')+'</td>';
+    h+=pill(r.extra[0],"no picks")+pill(r.extra[1],"no picks");
+    h+='<td>'+(r.any||!r.empty||r.picksIn?r.fails:"—")+'</td><td>'+(r.active?"":'<button type="button" data-aopen="'+esc(r.id)+'">Open</button>')+'</td></tr>';
   });
   $("audit-tbl").innerHTML=h+'</tbody>';
   var det=bad.map(function(r){return '<div class="panel"><h3 class="sub-h">'+esc(r.name)+'</h3><ul class="list">'+r.checks.filter(function(c){return !c.ok&&!c.na;}).map(function(c){return '<li><span class="a">'+c.t+'<br><span class="muted">'+c.d+'</span></span><span class="pill no">fail</span></li>';}).join("")+(r.empty||r.floorOk?"":'<li><span class="a">Payroll below the salary floor<br><span class="muted">'+m(r.pay)+' against '+m(S.settings.floor)+'</span></span><span class="pill no">fail</span></li>')+'</ul></div>';}).join("");
   $("audit-detail").innerHTML=det;
 }
 function auditText(){
-  var rows=auditRows().filter(function(r){return r.any&&r.fails;});
-  if(!rows.length) return "No rule violations found in the rotations entered.";
+  var rows=auditRows().filter(function(r){return r.fails;});
+  if(!rows.length) return "No rule violations found in the data entered.";
   return "League audit, "+S.settings.season+" ("+today()+")\n\n"+rows.map(function(r){
     return r.name+"\n"+r.checks.filter(function(c){return !c.ok&&!c.na;}).map(function(c){return "- "+c.t+": "+String(c.d).replace(/<[^>]*>/g,"");}).join("\n")+(r.empty||r.floorOk?"":"\n- Payroll below the salary floor: "+m(r.pay)+" against "+m(S.settings.floor));
   }).join("\n\n");
 }
 
+/* ---------- shared bits for stats ---------- */
+var TEAM_PRESETS=["PPG","Opp PPG","RPG","APG","SPG","BPG","TOV","FG%","3P%","Off rating","Def rating","Pace"];
+var ATTR_PRESETS=["Close Shot","Mid-Range Shot","Three-Point Shot","Free Throw","Layup","Driving Dunk","Standing Dunk","Post Control","Ball Handle","Passing Accuracy","Passing IQ","Speed","Agility","Strength","Vertical","Stamina","Interior Defense","Perimeter Defense","Steal","Block","Offensive Rebound","Defensive Rebound","Hustle","Overall Durability"];
+var PLAYER_PRESETS=["PPG","RPG","APG","SPG","BPG","TOV","MPG","FG%","3P%","FT%","PER"];
+function statsEditor(list,attr,presets,idPrefix){
+  var h='<div class="scroll"><table class="ytable"><thead><tr><th class="l">Stat</th><th class="l">Value</th><th></th></tr></thead><tbody>'+
+    (list.length?list.map(function(x,i){return '<tr class="statrow"><td><input id="'+idPrefix+'-k'+i+'" data-'+attr+'="'+i+':k" value="'+esc(x.k)+'" aria-label="Stat name"></td><td><input id="'+idPrefix+'-v'+i+'" data-'+attr+'="'+i+':v" value="'+esc(x.v)+'" aria-label="Stat value"></td><td><button type="button" data-'+attr+'del="'+i+'" aria-label="Delete stat">×</button></td></tr>';}).join(""):'<tr><td class="l muted" colspan="3">No stats entered. Add one below or paste a stats screenshot on the Parsing tab.</td></tr>')+
+    '</tbody></table></div><div class="toolbar" style="margin-top:8px"><button type="button" data-'+attr+'add="1">Add a stat</button>'+
+    presets.filter(function(p){return !list.some(function(x){return String(x.k).toLowerCase()===p.toLowerCase();});}).map(function(p){return '<button type="button" data-'+attr+'p="'+esc(p)+'">+ '+esc(p)+'</button>';}).join("")+'</div>';
+  return h;
+}
+function statsEvent(e,list,attr,onChange){
+  var t=e.target, g=function(a){return t.getAttribute&&t.getAttribute(a);};
+  var v=g("data-"+attr);
+  if(v!=null&&e.type==="input"){var a=v.split(":"); if(list[+a[0]]){list[+a[0]][a[1]]=t.value; onChange(false);} return;}
+  if(e.type!=="click") return;
+  if(g("data-"+attr+"add")){list.push({k:"",v:""}); onChange(true); return;}
+  var dl=g("data-"+attr+"del"); if(dl!=null&&dl!==""){list.splice(+dl,1); onChange(true); return;}
+  var pr=g("data-"+attr+"p"); if(pr){list.push({k:pr,v:""}); onChange(true); return;}
+}
+
+/* ---------- TEAM PROFILE ---------- */
+var prof={id:""};
+function renderProfile(){
+  var rows=allTeams().sort(byname); if(!rows.some(function(r){return r.id===prof.id;})) prof.id=S.team.id;
+  var sel=$("prof-sel"); sel.innerHTML=rows.map(function(r){return '<option value="'+esc(r.id)+'"'+(r.id===prof.id?" selected":"")+'>'+esc(r.name)+(r.active?" (open)":"")+'</option>';}).join("");
+  var t=tdata(prof.id), d=t.d, L=labels(), set=S.settings, u=updOf(prof.id), rc=recOf(prof.id), list=d.players.filter(function(p){return p.kind==="Contract";});
+  var h='<div class="profgrid">';
+  h+='<div class="panel"><h3 class="sub-h">Payroll by season</h3>';
+  if(!d.players.length) h+='<p class="muted">No roster entered for this team.</p>';
+  else{
+    h+='<div class="scroll"><table class="ytable"><thead><tr><th class="l">Season</th><th>Payroll</th><th>Cap space</th><th>Room to tax</th><th>Room to apron</th><th>Players paid</th></tr></thead><tbody>';
+    L.forEach(function(l,i){
+      var pay=payOf(d.players,i), n=d.players.filter(function(p){return (p.sal[i]||0)>0;}).length;
+      h+='<tr><td class="l">'+esc(l)+'</td><td class="'+(pay>set.apron?"neg":pay>set.tax?"mid":"")+'"><strong>'+m(pay)+'</strong></td><td class="'+sgn(set.cap-pay)+'">'+m(set.cap-pay)+'</td><td class="'+sgn(set.tax-pay)+'">'+m(set.tax-pay)+'</td><td class="'+sgn(set.apron-pay)+'">'+m(set.apron-pay)+'</td><td>'+n+'</td></tr>';
+    });
+    h+='</tbody></table></div>';
+  }
+  h+='</div>';
+  h+='<div class="panel"><h3 class="sub-h">Contracts ending</h3>';
+  if(!list.length) h+='<p class="muted">No contracts entered.</p>';
+  else{
+    h+='<div class="scroll"><table class="ytable"><thead><tr><th class="l">After</th><th class="l">Expiring</th><th class="l">With an option</th></tr></thead><tbody>';
+    L.forEach(function(l,i){
+      var ex=list.filter(function(p){return lastIdx(p)===i&&p.opt!=="Player"&&p.opt!=="Team";}), op=list.filter(function(p){return lastIdx(p)===i&&(p.opt==="Player"||p.opt==="Team");});
+      if(!ex.length&&!op.length) return;
+      h+='<tr><td class="l">'+esc(l)+'</td><td class="l">'+(ex.length?ex.map(function(p){return pname(p)+' <span class="muted">'+m(p.sal[i])+'</span>';}).join("<br>")+'<br><strong>'+m(ex.reduce(function(a,p){return a+(p.sal[i]||0);},0))+'</strong>':'—')+'</td><td class="l">'+(op.length?op.map(function(p){return '<span class="pill '+(p.opt==="Player"?"opt-p":"opt-t")+'">'+esc(p.opt)+' option</span> '+pname(p)+' <span class="muted">'+m(p.sal[i])+'</span>';}).join("<br>"):'—')+'</td></tr>';
+    });
+    h+='</tbody></table></div>';
+  }
+  h+='</div>';
+  var top=list.slice().sort(function(a,b){return (b.sal[0]||0)-(a.sal[0]||0);}).slice(0,5).filter(function(p){return (p.sal[0]||0)>0;});
+  h+='<div class="panel"><h3 class="sub-h">Biggest contracts, '+esc(L[0])+'</h3>'+(top.length?'<ul class="list">'+top.map(function(p){return '<li><span class="a">'+pname(p)+' <span class="muted">'+esc(p.pos||"")+(p.ovr!=null?" · "+p.ovr+" OVR":"")+' · ends '+esc(L[lastIdx(p)]||"?")+'</span></span><span class="b">'+m(p.sal[0])+'</span></li>';}).join("")+'</ul>':'<p class="muted">None.</p>')+'</div>';
+  h+='<div class="panel"><h3 class="sub-h">Draft picks</h3>'+picksHtml(d.picks).replace("<details>","<details open>")+'</div>';
+  h+='<div class="panel"><h3 class="sub-h">Record</h3>'+(rc.w!=null||rc.l!=null?'<p><strong>'+(rc.w||0)+'-'+(rc.l||0)+'</strong> <span class="muted">updated '+esc(fmtAt(u.stand))+'</span></p>':'<p class="muted">No record entered. Add it on the Standings tab.</p>')+'</div>';
+  h+='<div class="panel"><h3 class="sub-h">Team stats</h3><p class="src" id="prof-statsat">Updated: '+esc(fmtAt(u.stats))+'</p><div id="prof-stats">'+statsEditor(d.tstats,"ts",TEAM_PRESETS,"ts")+'</div></div>';
+  h+='<div class="panel"><h3 class="sub-h">Last updated</h3><p class="src" style="line-height:1.8">'+updHtml(prof.id)+'</p>'+(t.id===S.team.id?'':'<div class="toolbar" style="margin-top:8px"><button type="button" data-popen="'+esc(t.id)+'">Open this team</button></div>')+'</div>';
+  h+='</div>';
+  $("prof-box").innerHTML=h;
+}
+function onProfile(e){
+  var t=tdata(prof.id); if(!t) return;
+  var op=e.target.getAttribute&&e.target.getAttribute("data-popen"); if(op&&e.type==="click"){switchTeam(op);return;}
+  statsEvent(e,t.d.tstats,"ts",function(redraw){
+    touch(t.d,"stats"); save();
+    if(redraw) renderProfile(); else {var el=$("prof-statsat"); if(el) el.textContent="Updated: "+fmtAt(t.d.upd.stats);}
+    renderTeams();
+  });
+}
+
+/* ---------- TOP CONTRACTS ---------- */
+var tc={yr:0,team:"",min:0,n:25};
+function allContracts(){
+  var out=[]; allTeams().forEach(function(r){var t=tdata(r.id); t.d.players.forEach(function(p){if(p.kind==="Contract") out.push({team:t.name,tid:t.id,p:p});});}); return out;
+}
+function optPill(p){return p.opt==="Player"||p.opt==="Team"?'<span class="pill '+(p.opt==="Player"?"opt-p":"opt-t")+'">'+esc(p.opt)+' option</span>':'';}
+function renderTop(){
+  var box=$("top-box"), L=labels(), set=S.settings, all=allContracts(), teams=allTeams().sort(byname);
+  var h='<div class="form" style="margin-bottom:12px"><label for="tc-yr">Season<select id="tc-yr">'+L.map(function(l,i){return '<option value="'+i+'"'+(i===tc.yr?" selected":"")+'>'+esc(l)+'</option>';}).join("")+'</select></label>'+
+    '<label for="tc-team">Team<select id="tc-team"><option value="">All teams</option>'+teams.map(function(r){return '<option value="'+esc(r.id)+'"'+(r.id===tc.team?" selected":"")+'>'+esc(r.name)+'</option>';}).join("")+'</select></label>'+
+    '<label for="tc-min">Minimum salary ($M)<input id="tc-min" type="number" min="0" step="0.5" value="'+esc(tc.min)+'"></label>'+
+    '<label for="tc-n">Show<select id="tc-n">'+[25,50,100].map(function(n){return '<option'+(n===tc.n?" selected":"")+'>'+n+'</option>';}).join("")+'</select></label></div>';
+  var rows=all.filter(function(r){var v=r.p.sal[tc.yr]||0; return v>0&&v>=tc.min&&(!tc.team||r.tid===tc.team);}).sort(function(a,b){return (b.p.sal[tc.yr]||0)-(a.p.sal[tc.yr]||0);});
+  h+='<h3 class="sub-h">Biggest contracts, '+esc(L[tc.yr])+' <span class="muted">('+rows.length+' match)</span></h3>';
+  if(!rows.length) h+='<p class="muted">No contracts match. Enter rosters first, or lower the minimum salary.</p>';
+  else h+='<div class="panel scroll"><table class="ytable"><thead><tr><th>#</th><th class="l">Player</th><th class="l">Team</th><th>Pos</th><th>Age</th><th>OVR</th><th>'+esc(L[tc.yr])+'</th><th>Left from this season</th><th class="l">Ends after</th><th class="l">Option</th></tr></thead><tbody>'+rows.slice(0,tc.n).map(function(r,i){
+    var p=r.p, left=0; for(var k=tc.yr;k<NY;k++) left+=(p.sal[k]||0);
+    return '<tr><td>'+(i+1)+'</td><td class="l">'+pname(p)+'</td><td class="l">'+esc(r.team)+'</td><td>'+esc(p.pos||"")+'</td><td>'+esc(p.age==null?"":p.age)+'</td><td>'+esc(p.ovr==null?"":p.ovr)+'</td><td><strong>'+m(p.sal[tc.yr])+'</strong></td><td>'+m(left)+'</td><td class="l">'+esc(L[lastIdx(p)]||"?")+'</td><td class="l">'+optPill(p)+'</td></tr>';
+  }).join("")+'</tbody></table></div>';
+  h+='<h3 class="sub-h" style="margin-top:18px">Payroll by team and season</h3>';
+  var teamRows=teams.filter(function(r){return !r.empty;});
+  if(!teamRows.length) h+='<p class="muted">No team has a roster yet.</p>';
+  else h+='<div class="panel scroll"><table class="ytable"><thead><tr><th class="l">Team</th>'+L.map(function(l){return '<th>'+esc(l)+'</th>';}).join("")+'</tr></thead><tbody>'+teamRows.map(function(r){
+    var d=tdata(r.id).d;
+    return '<tr><td class="l"><strong>'+esc(r.name)+'</strong></td>'+L.map(function(l,i){var pay=payOf(d.players,i); return '<td class="'+(pay>set.apron?"neg":pay>set.tax?"mid":"")+'">'+m(pay)+'<br><span class="muted" style="font-size:11px">space '+m(set.cap-pay)+'</span></td>';}).join("")+'</tr>';
+  }).join("")+'</tbody></table></div><p class="src" style="margin-top:6px">Red is over the apron, amber is over the tax line.</p>';
+  h+='<h3 class="sub-h" style="margin-top:18px">Contracts ending, by season</h3><p class="src">Expiring means the last season with a salary. A player with an option in that last season is listed apart, because the option decides whether he stays.</p>';
+  var any=false;
+  L.forEach(function(l,i){
+    var pool=all.filter(function(r){return lastIdx(r.p)===i&&(!tc.team||r.tid===tc.team);});
+    if(!pool.length) return; any=true;
+    var ex=pool.filter(function(r){return r.p.opt!=="Player"&&r.p.opt!=="Team";}).sort(function(a,b){return (b.p.sal[i]||0)-(a.p.sal[i]||0);}), op=pool.filter(function(r){return r.p.opt==="Player"||r.p.opt==="Team";}).sort(function(a,b){return (b.p.sal[i]||0)-(a.p.sal[i]||0);});
+    function tbl(list){return '<div class="scroll"><table class="ytable"><thead><tr><th class="l">Player</th><th class="l">Team</th><th>OVR</th><th>Age</th><th>Salary '+esc(l)+'</th><th class="l">Option</th></tr></thead><tbody>'+list.map(function(r){return '<tr><td class="l">'+pname(r.p)+'</td><td class="l">'+esc(r.team)+'</td><td>'+esc(r.p.ovr==null?"":r.p.ovr)+'</td><td>'+esc(r.p.age==null?"":r.p.age)+'</td><td>'+m(r.p.sal[i])+'</td><td class="l">'+optPill(r.p)+'</td></tr>';}).join("")+'</tbody></table></div>';}
+    h+='<div class="panel"><h4 style="margin:0 0 6px">Ends after '+esc(l)+'</h4>'+
+      (ex.length?'<p class="src"><strong>Expiring: '+ex.length+' player'+(ex.length>1?"s":"")+', '+m(ex.reduce(function(a,r){return a+(r.p.sal[i]||0);},0))+'</strong></p>'+tbl(ex):'<p class="src">No plain expiring contracts.</p>')+
+      (op.length?'<p class="src" style="margin-top:10px"><strong>With an option in '+esc(l)+': '+op.length+' player'+(op.length>1?"s":"")+', '+m(op.reduce(function(a,r){return a+(r.p.sal[i]||0);},0))+'</strong></p>'+tbl(op):'')+'</div>';
+  });
+  if(!any) h+='<p class="muted">No contracts entered yet.</p>';
+  box.innerHTML=h;
+}
+function onTop(e){
+  var id=e.target.id;
+  if(id==="tc-yr") tc.yr=+e.target.value; else if(id==="tc-team") tc.team=e.target.value; else if(id==="tc-min") tc.min=Math.max(0,num(e.target.value)||0); else if(id==="tc-n") tc.n=+e.target.value; else return;
+  renderTop();
+}
+
+/* ---------- PLAYER PROFILE ---------- */
+var pl={id:"",q:""};
+function allPlayers(){var out=[]; allTeams().sort(byname).forEach(function(r){var t=tdata(r.id); t.d.players.forEach(function(p){out.push({t:t,p:p});});}); return out;}
+function plKey(x){return x.t.id+"|"+x.p.id;}
+function curPl(){return allPlayers().filter(function(x){return plKey(x)===pl.id;})[0]||null;}
+function renderPlayerSel(){
+  var q=pl.q.toLowerCase(), list=allPlayers().filter(function(x){return !q||(x.p.name||"").toLowerCase().indexOf(q)>=0||x.t.name.toLowerCase().indexOf(q)>=0;});
+  if(!list.some(function(x){return plKey(x)===pl.id;})) pl.id=list.length?plKey(list[0]):"";
+  var groups={}, order=[]; list.forEach(function(x){if(!groups[x.t.id]){groups[x.t.id]=[];order.push(x.t);} groups[x.t.id].push(x);});
+  $("pl-sel").innerHTML=list.length?order.map(function(t){return '<optgroup label="'+esc(t.name)+'">'+groups[t.id].map(function(x){return '<option value="'+esc(plKey(x))+'"'+(plKey(x)===pl.id?" selected":"")+'>'+esc(x.p.name||"Unnamed")+(x.p.ovr!=null?" ("+x.p.ovr+")":"")+'</option>';}).join("")+'</optgroup>';}).join(""):'<option value="">No player found</option>';
+}
+function renderPlayerBox(){
+  var box=$("pl-box"), x=curPl();
+  if(!x){box.innerHTML='<p class="muted">No players yet. Enter rosters on the Roster tab or the Parsing tab.</p>';return;}
+  var p=x.p, d=x.t.d, L=labels(), li=lastIdx(p), R=d.rot||{m:{},st:{},pp:{}};
+  var h='<div class="tiles" style="margin-bottom:14px">'+
+    [["Team",x.t.name,p.kind],["Position / age",(p.pos||"?")+" · "+(p.age==null?"?":p.age),""],["Overall",p.ovr==null?"—":String(p.ovr),p.ovrShown!=null&&p.ovrShown!==p.ovr?"shown "+p.ovrShown:""],[L[0]+" salary",m(p.sal[0]),""],["Contract ends",li>=0?"after "+L[li]:"—",p.opt==="Player"||p.opt==="Team"?p.opt+" option in the last year":""]].map(function(t){return '<div class="tile"><div class="k">'+esc(t[0])+'</div><div class="v" style="font-size:20px">'+esc(t[1])+'</div><div class="n">'+esc(t[2])+'</div></div>';}).join("")+'</div>';
+  h+='<div class="profgrid"><div class="panel"><h3 class="sub-h">Contract</h3><div class="scroll"><table class="ytable"><thead><tr>'+L.map(function(l){return '<th>'+esc(l)+'</th>';}).join("")+'</tr></thead><tbody><tr>'+p.sal.map(function(v,i){return '<td class="'+((p.opt==="Player"||p.opt==="Team")&&i===li?(p.opt==="Player"?"opt-p":"opt-t"):"")+'">'+(v!=null?m(v):"–")+'</td>';}).join("")+'</tr></tbody></table></div><p class="src" style="margin-top:6px">Total remaining: '+m(p.sal.reduce(function(a,v){return a+(v||0);},0))+'</p></div>';
+  var mins=R.m[p.id], logs=(d.ratingLog||[]).filter(function(r){return sameName(r.name,p.name);}), trs=S.trades.filter(function(r){return p.name&&String(r.text).toLowerCase().indexOf(String(p.name).toLowerCase())>=0;});
+  h+='<div class="panel"><h3 class="sub-h">Rotation</h3>'+(mins!=null?'<p>'+esc(mins)+' minutes'+(R.st[p.id]?", starter":"")+(R.pp[p.id]?", plays "+esc(R.pp[p.id]):"")+'</p>':'<p class="muted">No minutes entered on the Rotation tab for this team.</p>')+'</div>';
+  h+='<div class="panel"><h3 class="sub-h">Rating history</h3>'+(logs.length?'<ul class="list">'+logs.slice(-8).reverse().map(function(r){return '<li><span class="a">'+esc(r.t)+' · '+esc(r.src)+'</span><span class="b">'+r.from+' → '+r.to+'</span></li>';}).join("")+'</ul>':'<p class="muted">No rating changes recorded.</p>')+'</div>';
+  h+='<div class="panel"><h3 class="sub-h">Trades</h3>'+(trs.length?'<ul class="list">'+trs.slice(-5).reverse().map(function(r){return '<li><span class="a">'+esc(r.text)+'</span><span class="b">'+esc(r.t)+'</span></li>';}).join("")+'</ul>':'<p class="muted">Not in any trade made with the builder or parser.</p>')+'</div>';
+  h+='<div class="panel"><h3 class="sub-h">Stats</h3><p class="src" id="pl-statsat">Updated: '+esc(fmtAt(p.statsAt))+'</p><div id="pl-stats">'+statsEditor(p.stats,"ps",PLAYER_PRESETS,"ps")+'</div></div>';
+  h+='<div class="panel"><h3 class="sub-h">Attributes</h3><p class="src" id="pl-attrsat">Updated: '+esc(fmtAt(p.attrsAt))+'. The suggested names are from my memory of NBA 2K and may not match your game. Edit them freely.</p><div id="pl-attrs">'+statsEditor(p.attrs,"pa",ATTR_PRESETS,"pa")+'</div></div></div>';
+  box.innerHTML=h;
+}
+function renderPlayers(){renderPlayerSel(); renderPlayerBox();}
+function onPlayerBox(e){
+  var x=curPl(); if(!x) return;
+  statsEvent(e,x.p.stats,"ps",function(redraw){
+    x.p.statsAt=new Date().toISOString(); touch(x.t.d,"pstats"); save();
+    if(redraw) renderPlayerBox(); else {var el=$("pl-statsat"); if(el) el.textContent="Updated: "+fmtAt(x.p.statsAt);}
+  });
+  statsEvent(e,x.p.attrs,"pa",function(redraw){
+    x.p.attrsAt=new Date().toISOString(); touch(x.t.d,"pattrs"); save();
+    if(redraw) renderPlayerBox(); else {var el=$("pl-attrsat"); if(el) el.textContent="Updated: "+fmtAt(x.p.attrsAt)+". The suggested names are from my memory of NBA 2K and may not match your game. Edit them freely.";}
+  });
+}
+
+/* ---------- GAMEPLAN OPTION LISTS ---------- */
+function gpList(f){var c=S.gpOpts&&Array.isArray(S.gpOpts[f[0]])?S.gpOpts[f[0]]:null; return c||f[2];}
+function renderGPOpts(){
+  var box=$("gp-opts"); if(!box) return;
+  box.innerHTML=GP_TEXT.map(function(f){return '<label for="gpo-'+f[0]+'">'+esc(f[1])+'<textarea id="gpo-'+f[0]+'" data-gpo="'+f[0]+'" rows="4" style="font-family:var(--f-body);background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:6px">'+esc(gpList(f).join("\n"))+'</textarea></label>';}).join("");
+}
+function onGPOpts(e){
+  var k=e.target.getAttribute&&e.target.getAttribute("data-gpo"); if(!k) return;
+  var seen={}, lines=e.target.value.split("\n").map(function(x){return x.trim();}).filter(function(x){if(!x||seen[x.toLowerCase()]) return false; seen[x.toLowerCase()]=1; return true;});
+  S.gpOpts[k]=lines; save();
+  var dl=$("dl-"+k); if(dl) dl.innerHTML=lines.map(function(o){return '<option value="'+esc(o)+'">';}).join("");
+}
+
 /* ---------- orchestration ---------- */
-function refresh(){renderUpd();renderSummary();renderRotChecks();renderTrade();renderExtOut();renderScen();renderTeams();renderStandings();renderAudit();}
+function refresh(){renderUpd();renderProfile();renderTop();renderPlayers();renderSummary();renderRotChecks();renderTrade();renderExtOut();renderScen();renderTeams();renderStandings();renderAudit();}
 function renderAll(){
   renderSettings();renderLedger();renderLog();renderRotTable();renderExtInputs();renderPicks();renderTargets();renderDevTable();
-  renderTeamBar(); renderGP(); renderTB(); refresh(); $("rules").value=S.rules;
+  renderTeamBar(); renderGP(); renderTB(); if(tp) tp=resolveTrade(tp.out,tp.text); renderTP(); renderPlog(); refresh(); $("rules").value=S.rules;
 }
 
 function init(){
@@ -1960,7 +2520,7 @@ function init(){
   $("btn-trade-reset").addEventListener("click",function(){outSet={};$("in-in").value=0;renderLedger();renderTrade();});
   $("btn-fl").addEventListener("click",runFiller); $("fl-out").addEventListener("click",onFill);
   bindGen("picks-tbl"); bindGen("targets-tbl");
-  $("btn-pick-add").addEventListener("click",function(){var y=seasonStart();S.picks.push({id:uid(),year:y==null?null:y+1,round:"1",team:"Dallas",status:"Own",prot:"",note:""});touch(S,"picks");save();renderPicks();renderUpd();renderTeams();});
+  $("btn-pick-add").addEventListener("click",function(){var y=seasonStart();S.picks.push({id:uid(),year:y==null?null:y+1,round:"1",team:S.team.name,status:"Own",prot:"",protN:null,swap:"No",swapWith:"",note:""});touch(S,"picks");save();renderPicks();renderUpd();renderTeams();renderLottery();});
   $("btn-target-add").addEventListener("click",function(){S.targets.push({id:uid(),name:"",pos:"",year:null,tier:"Top target",note:""});save();renderTargets();});
   $("tb-slots").addEventListener("change",function(e){var i=e.target.getAttribute("data-slot"); if(i==null) return; tb.slots[+i]=e.target.value; tb.assets={}; renderTB();});
   $("tb-teams").addEventListener("change",function(e){var k=e.target.getAttribute("data-asset"); if(!k) return; if(e.target.value) tb.assets[k]=e.target.value; else delete tb.assets[k]; renderTBSum(tbTeams());});
@@ -2008,6 +2568,7 @@ function init(){
   $("btn-csv").addEventListener("click",function(){saveFile("cap-room-"+slug(S.team.name)+".csv",csv());});
   $("imp-file").addEventListener("change",function(e){if(e.target.files[0]) importJSON(e.target.files[0]); e.target.value="";});
 
+  $("pc-default").innerHTML=CATS.map(function(c){return '<option value="'+c[0]+'">'+c[1]+'</option>';}).join("");
   var drop=$("drop");
   drop.addEventListener("click",function(){$("shot-file").click();});
   drop.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();$("shot-file").click();}});
@@ -2017,13 +2578,29 @@ function init(){
   drop.addEventListener("drop",function(e){addFiles(e.dataTransfer.files);});
   window.addEventListener("paste",function(e){
     var fs=e.clipboardData&&e.clipboardData.files;
-    if(fs&&fs.length){var any=false;Array.prototype.forEach.call(fs,function(f){if(/^image\//.test(f.type))any=true;}); if(any){e.preventDefault();addFiles(fs);try{location.hash="roster";}catch(x){}showTab();}}
+    if(fs&&fs.length){var any=false;Array.prototype.forEach.call(fs,function(f){if(/^image\//.test(f.type))any=true;}); if(any){e.preventDefault();addFiles(fs);try{location.hash="parse";}catch(x){}showTab();}}
   });
   $("thumbs").addEventListener("click",function(e){
     var i=e.target.getAttribute&&e.target.getAttribute("data-rm"); if(i==null||i==="") return;
     URL.revokeObjectURL(shots[+i].url); shots.splice(+i,1); renderShots();
   });
   $("btn-clear-shots").addEventListener("click",function(){shots.forEach(function(s){URL.revokeObjectURL(s.url);});shots=[];renderShots();});
+  $("thumbs").addEventListener("change",function(e){var i=e.target.getAttribute&&e.target.getAttribute("data-cat"); if(i!=null&&shots[+i]) shots[+i].cat=e.target.value;});
+  $("pv-box").addEventListener("click",onPreview); $("pv-box").addEventListener("change",onPreview);
+  $("btn-tp-read").addEventListener("click",readTrade);
+  $("btn-tp-clear").addEventListener("click",function(){tp=null;$("tp-text").value="";$("tp-msg").textContent="";renderTP();});
+  $("tp-box").addEventListener("click",function(e){if(e.target.id==="btn-tp-apply") applyParsedTrade();});
+  $("tp-box").addEventListener("change",function(e){if(e.target.id==="tp-over"){var b=$("btn-tp-apply"); if(b) b.disabled=!e.target.checked;}});
+  $("btn-undo").addEventListener("click",undoLast);
+  $("btn-plog-clear").addEventListener("click",function(){S.plog=[];save();renderPlog();});
+  $("prof-sel").addEventListener("change",function(e){prof.id=e.target.value;renderProfile();});
+  $("prof-box").addEventListener("input",onProfile); $("prof-box").addEventListener("click",onProfile);
+  $("top-box").addEventListener("change",onTop);
+  $("pl-q").addEventListener("input",function(e){pl.q=e.target.value;renderPlayers();});
+  $("pl-sel").addEventListener("change",function(e){pl.id=e.target.value;renderPlayerBox();});
+  $("pl-box").addEventListener("input",onPlayerBox); $("pl-box").addEventListener("click",onPlayerBox);
+  $("gp-opts").addEventListener("input",onGPOpts);
+  $("btn-gpo-reset").addEventListener("click",function(){S.gpOpts={};save();renderGP();});
   $("btn-read").addEventListener("click",readShots);
   $("btn-stop").addEventListener("click",function(){if(ctl)ctl.abort();});
 
