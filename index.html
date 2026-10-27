@@ -50,6 +50,9 @@ p{margin:0}
 .logo-slot{flex:0 0 auto;width:72px;height:72px;display:flex;align-items:center;justify-content:center}
 .logo-slot svg,.logo-slot img{width:72px;height:72px;object-fit:contain;display:block}
 .toolbar{display:flex;flex-wrap:wrap;gap:8px}
+.teambar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.teambar label{font-family:var(--f-display);font-weight:600;font-size:18px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.teambar select{background:var(--surface);border:2px solid var(--accent);border-radius:6px;padding:6px 10px;font-weight:600;min-width:220px;max-width:100%}
 .acct{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:-8px}
 .acct img{border-radius:50%;width:24px;height:24px;display:block}
 .acct-name{color:var(--ink);font-weight:600}
@@ -103,6 +106,8 @@ tbody tr:hover{background:var(--surface2)}
 .drop{border:2px dashed var(--line);border-radius:8px;padding:22px 16px;text-align:center;background:var(--surface);cursor:pointer;display:flex;flex-direction:column;gap:4px;align-items:center}
 .drop.over{border-color:var(--accent);background:var(--surface2)}
 .drop strong{font-family:var(--f-display);font-size:20px;letter-spacing:.04em;text-transform:uppercase}
+.rep-list{margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:2px}
+.rep-list li.bad{color:var(--bad)} .rep-list li.warn{color:var(--warn)}
 .thumbs{display:flex;flex-wrap:wrap;gap:10px}
 .thumb{position:relative;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--surface);width:150px}
 .thumb img{display:block;width:100%;height:96px;object-fit:cover}
@@ -148,7 +153,7 @@ a{color:var(--accent)}
       </div>
       <div>
         <h1>Cap Room</h1>
-        <p class="sub">Salary cap picture for the Dallas Mavericks in your NBA 2K26 sim league. Paste roster and contract screenshots, check the numbers, and plan rotations, extensions, trades and picks.</p>
+        <p class="sub">Salary cap picture for your NBA 2K26 sim league. Keep a roster for every team, paste roster and contract screenshots, check the numbers, and plan rotations, extensions, trades and picks.</p>
       </div>
     </div>
     <div class="toolbar">
@@ -163,6 +168,8 @@ a{color:var(--accent)}
   </header>
 
   <div id="acct" class="acct"><img id="acct-av" alt="" hidden width="24" height="24"><span id="acct-name" class="acct-name"></span><span id="acct-status" class="acct-status" role="status"></span></div>
+
+  <div class="teambar"><label for="team-sel">Team</label><select id="team-sel"></select></div>
 
   <nav id="tabs" class="tabs" aria-label="Sections"></nav>
 
@@ -190,10 +197,33 @@ a{color:var(--accent)}
     </section>
   </div>
 
+  <!-- TEAMS -->
+  <div class="tabpane" data-tab="teams">
+    <section aria-labelledby="h-teams">
+      <h2 id="h-teams">Teams in your league</h2>
+      <p class="muted">Each team keeps its own roster, rotation, picks, scenarios and rating log. The cap lines on the League tab are shared by every team. To fill a team, open it and paste screenshots on the Roster tab.</p>
+      <div class="panel">
+        <div class="form"><label for="tm-name">Team name<input id="tm-name" type="text" placeholder="e.g. Golden State Warriors" style="font-family:var(--f-body)"></label></div>
+        <div class="toolbar" style="margin-top:10px"><button id="btn-tm-add" class="primary" type="button">Add team and open it</button><button id="btn-tm-ren" type="button">Rename the open team</button></div>
+        <p id="tm-msg" class="src" role="status" style="margin-top:6px"></p>
+      </div>
+      <div class="panel scroll"><table class="ytable" id="tm-tbl"></table></div>
+    </section>
+    <section aria-labelledby="h-abs">
+      <h2 id="h-abs">Who can take a salary</h2>
+      <p class="muted">Enter a salary you want to send out. Teams with enough cap space can absorb it. Other teams must send back at least the amount shown, using the matching rule on the League tab.</p>
+      <div class="panel">
+        <div class="form"><label for="ab-sal">Salary to send ($M)<input id="ab-sal" type="number" step="0.01" min="0" value="0"></label></div>
+        <div id="ab-out" style="margin-top:12px"></div>
+      </div>
+    </section>
+  </div>
+
   <!-- ROSTER -->
   <div class="tabpane" data-tab="roster">
     <section aria-labelledby="h-shots">
       <h2 id="h-shots">Screenshots</h2>
+      <p class="muted" id="roster-team"></p>
       <div id="drop" class="drop" tabindex="0" role="button" aria-label="Add screenshots">
         <strong>Paste screenshots here</strong>
         <span class="muted">Press Ctrl+V (Cmd+V on Mac) anywhere on this page, drop image files, or click to choose them. Roster, contracts and team salary screens all work.</span>
@@ -206,7 +236,8 @@ a{color:var(--accent)}
         <button id="btn-clear-shots" type="button" disabled>Remove all</button>
       </div>
       <p id="read-msg" class="muted" role="status"></p>
-      <p class="src">Rows read from a screenshot are tagged <span class="badge check">check</span> until you edit them. Claude can misread a digit, so compare against the screen. If a rating shows a ▲ or ▼ change, the League tab setting decides whether it is undone to get the base rating.</p>
+      <div id="read-report" aria-live="polite"></div>
+      <p class="src">If a team name is visible on the screen, the rows go to that team: an existing one is matched by name, and an unknown name creates a new team. With no name visible they go to the open team. Rows read from a screenshot are tagged <span class="badge check">check</span> until you edit them. Claude can misread a digit, so compare against the screen. If a rating shows a ▲ or ▼ change, the League tab setting decides whether it is undone to get the base rating.</p>
     </section>
     <section aria-labelledby="h-ledger">
       <h2 id="h-ledger">Contracts</h2>
@@ -348,7 +379,7 @@ a{color:var(--accent)}
 (function(){
 "use strict";
 var KEY="caproom-v1", NY=5, POS=["PG","SG","SF","PF","C"];
-var TABS=[["cap","Cap"],["roster","Roster"],["rotation","Rotation"],["deals","Deals"],["picks","Picks"],["development","Development"],["scenarios","Scenarios"],["league","League"]];
+var TABS=[["cap","Cap"],["teams","Teams"],["roster","Roster"],["rotation","Rotation"],["deals","Deals"],["picks","Picks"],["development","Development"],["scenarios","Scenarios"],["league","League"]];
 var DEFAULT_RULES=[
 "Free agency (rule fragments seen in your league chat; verify):",
 "- A signed free agent can be made available for trade only after the first sim of the season. This does not apply to minimum-contract free agents.",
@@ -399,7 +430,7 @@ var SEED_PLAYERS=[
 var SEED_MIN={"C. White":[33,1,"PG"],"A. Simons":[29,1,"SG"],"J. Okafor":[28,1,"PF"],"G. Williams":[29,1,"C"],"C. Johnson":[29,0,""],"S. Mykhailiuk":[27,0,""],"T. Horton-Tucker":[27,0,""],"T. Mann":[10,0,""]};
 var SEED_PICKS=[[2021,"Warriors",1],[2021,"Mavs",1],[2021,"Suns",1],[2021,"Warriors",2],[2021,"Clippers",2],[2022,"Worst of Mavs/Warriors",1,"Written this way in your sheet; check how it is protected"],[2022,"Knicks",2],[2022,"Mavs",2],[2023,"Mavs",1],[2023,"Mavs",2],[2024,"Mavs",1],[2024,"Mavs",2],[2024,"Knicks",1],[2025,"Mavs",1],[2025,"Mavs",2]];
 function seedState(){
-  var d=defaults(); d.settings.season="2020-21"; d.settings.cap=109.15; d.settings.floor=98.235;
+  var d=defaults(); d.settings.season="2020-21"; d.settings.cap=109.15; d.settings.floor=98.235; d.team.name="Dallas Mavericks";
   d.players=SEED_PLAYERS.map(function(r,i){var sal=r[4].slice(); while(sal.length<NY) sal.push(null); return {id:"s"+(i+1),name:r[0],pos:r[1],age:r[2],ovr:r[3],kind:"Contract",sal:sal,opt:"None",note:""};});
   var byName={}; d.players.forEach(function(p){byName[p.name]=p;});
   for(var n in SEED_MIN){var p=byName[n], v=SEED_MIN[n]; d.rot.m[p.id]=v[0]; if(v[1]) d.rot.st[p.id]=1; if(v[2]) d.rot.pp[p.id]=v[2];}
@@ -411,7 +442,7 @@ function defaults(){
   return {
     settings:{season:"2019-20",cap:109.14,tax:132.627,apron:138.928,floor:98.226,matchPct:125,matchPlus:0.1,
       total:240,topN:3,topMin:28,startN:2,subOvr:70,subMax:10,bench:12,prospectAge:23,vetAge:29,undoDelta:1},
-    players:clone(EXAMPLES), rules:DEFAULT_RULES,
+    players:clone(EXAMPLES), rules:DEFAULT_RULES, team:{id:"t0",name:"My team"}, others:[],
     rot:{m:{},st:{},pp:{}}, picks:[], targets:[], scen:[], ratingLog:[],
     ext:{pid:"",offers:[{yrs:2,first:0,chg:0},{yrs:3,first:0,chg:-5},{yrs:5,first:0,chg:0}]}
   };
@@ -427,6 +458,19 @@ function normState(st){
   var d=defaults();
   for(var k in d.settings) if(st.settings[k]==null) st.settings[k]=d.settings[k];
   if(typeof st.rules!=="string") st.rules=DEFAULT_RULES;
+  fixTeam(st,d);
+  if(!st.team||!st.team.id||!st.team.name) st.team={id:"t0",name:(st.seedVer&&st.players.some(function(p){return p.id==="s1";}))?"Dallas Mavericks":"My team"};
+  if(!Array.isArray(st.others)) st.others=[];
+  st.others=st.others.filter(function(o){return o&&o.name;});
+  st.others.forEach(function(o){
+    if(!o.id) o.id=uid();
+    if(!o.data||typeof o.data!=="object") o.data={};
+    if(!Array.isArray(o.data.players)) o.data.players=[];
+    fixTeam(o.data,d);
+  });
+  return st;
+}
+function fixTeam(st,d){
   ["picks","targets","scen","ratingLog"].forEach(function(k){if(!Array.isArray(st[k])) st[k]=[];});
   if(!st.rot||typeof st.rot!=="object") st.rot={};
   ["m","st","pp"].forEach(function(k){if(!st.rot[k]||typeof st.rot[k]!=="object") st.rot[k]={};});
@@ -451,12 +495,15 @@ async function pushCloud(){
   if(acct.busy){acct.dirty=true; return;}
   acct.busy=true; acct.dirty=false; setAcct("Saving to your account…");
   try{
-    await acct.ref.set({v:1,savedAt:new Date().toISOString(),state:JSON.parse(JSON.stringify(S))});
+    var snap=JSON.parse(JSON.stringify(S));
+    if(JSON.stringify(snap).length>250000) throw {code:"too_big"};
+    await acct.ref.set({v:1,savedAt:new Date().toISOString(),state:snap});
     setAcct("Saved to your account","ok");
   }catch(e){
     var c=e&&e.code;
     setAcct(c==="invalid_argument"?"Your access is view-only, so changes are saved in this browser only. Ask the owner for Contributor access.":
       c==="quota_exceeded"?"The account database is full, so changes are saved in this browser only.":
+      c==="too_big"?"There is too much data to sync to your account (limit about 256 KB). Delete a team or old scenarios. Changes are saved in this browser only.":
       "Could not save to your account ("+(c||"error")+"). Changes are still saved in this browser.","bad");
   }finally{acct.busy=false; if(acct.dirty) cloudSave();}
 }
@@ -647,17 +694,18 @@ function renderLedger(){
       p.sal.map(function(v,i){return inp("s"+i,"sl","number",v,'step="0.01" min="0" placeholder="–"');}).join("")+
       '<td><select id="r-'+id+'-opt" class="op" data-id="'+id+'" data-f="opt" aria-label="option">'+["None","Player","Team"].map(function(k){return '<option'+(p.opt===k||(!p.opt&&k==="None")?" selected":"")+'>'+k+'</option>';}).join("")+'</select></td>'+
       inp("note","nt","text",p.note,'placeholder="Note"')+
-      '<td class="x">'+(p.ex?'<span class="badge ex">example</span> ':"")+(p.shot?'<span class="badge check" id="b-'+id+'">check</span> ':"")+'<button type="button" data-del="'+id+'" aria-label="Delete row">×</button></td></tr>';
+      '<td class="x">'+(p.ex?'<span class="badge ex">example</span> ':"")+(p.shot?'<span class="badge check" id="b-'+id+'">'+(missingOf(p).length?'missing '+esc(missingOf(p).join(", ")):'check')+'</span> ':"")+'<button type="button" data-del="'+id+'" aria-label="Delete row">×</button></td></tr>';
   });
   if(!S.players.length) h+='<tr><td colspan="'+(NY+9)+'" class="muted" style="text-align:center;padding:18px">No contracts yet. Paste a screenshot or add a row.</td></tr>';
   h+='</tbody>';
   $("ledger").innerHTML=h;
   $("ex-banner").hidden=!S.players.some(function(p){return p.ex;});
 }
-function logRating(name,from,to,src){
+function logRating(name,from,to,src,log){
   if(from==null||to==null||from===to) return;
-  S.ratingLog.push({t:new Date().toLocaleDateString("en-GB"),season:S.settings.season,name:name,from:from,to:to,src:src});
-  if(S.ratingLog.length>300) S.ratingLog=S.ratingLog.slice(-300);
+  var L=log||S.ratingLog;
+  L.push({t:new Date().toLocaleDateString("en-GB"),season:S.settings.season,name:name,from:from,to:to,src:src});
+  if(L.length>300) L.splice(0,L.length-300);
 }
 function renderLog(){
   var rows=S.ratingLog.slice(-60).reverse();
@@ -1056,55 +1104,118 @@ function prompt_(){
   var L=labels();
   return "These images are screenshots from an NBA 2K26 franchise or sim league: rosters, contracts and team salary screens. "+
   "Read every player row you can see and reply with only one JSON object of this shape:\n"+
-  '{"players":[{"name":"First Last","pos":"PG","age":24,"ovr":78,"ovrChange":-1,"kind":"Contract","salaries":[12.5,13.1,null,null,null],"option":"None","note":""}],"team":{"payroll":null,"cap":null,"tax":null}}\n'+
+  '{"teams":[{"name":"Golden State Warriors","payroll":null,"cap":null,"tax":null,"players":[{"name":"First Last","pos":"PG","age":24,"ovr":78,"ovrChange":-1,"kind":"Contract","salaries":[12.5,13.1,null,null,null],"option":"None","note":""}]}]}\n'+
   "Rules:\n"+
+  "- Group players by team. Use one entry in teams for each team that is visible, and merge several screenshots of the same team into one entry.\n"+
+  "- name is the team's name exactly as printed on the screen (a title, header, banner or team label). Use null when no team name is visible. Never guess a team from the players you recognise.\n"+
   "- ovr is the overall rating exactly as shown. ovrChange is the signed change shown next to it (a ▲ with +1 is 1, a ▼ with -1 is -1), or null when none is shown.\n"+
   "- salaries has exactly 5 entries in $ millions for these seasons in order: "+L.join(", ")+". The first entry is the current season. Use null for a season with no salary. If a screen shows dollars, convert to millions (12,500,000 becomes 12.5). If only one salary is shown, put it in the first entry and null in the rest, unless the screen says the contract's years.\n"+
   '- kind is "Contract" unless the screen clearly shows dead money, a waived player or a cap hold ("Dead money" or "Cap hold").\n'+
   '- option is "Player" or "Team" if an option year is shown, otherwise "None".\n'+
   "- Use null for any number you cannot read. Never guess a digit. Do not include a player twice.\n"+
-  "- team.payroll, team.cap and team.tax are $ millions if a screen shows them, otherwise null.\n"+
-  "- Put anything unclear (cut-off text, a partly hidden row) in that player's note.";
+  "- payroll, cap and tax for a team are $ millions if a screen shows them, otherwise null.\n"+
+  "- Put anything unclear (cut-off text, a partly hidden row) in that player's note.\n"+
+  '- Also report what you could not read. Add a top-level "images" array with one entry per screenshot in the order given: {"index":1,"status":"read","note":""}, where status is "read", "partly" or "unreadable" and note says why (blurry, cropped, no player rows). Add a top-level "problems" array of short strings for anything else you could not read or were unsure about, and an "unreadable" array of short strings inside a team entry for rows or values you skipped there. Use empty arrays when there is nothing to report.';
+}
+function normTeamName(n){return String(n||"").toLowerCase().replace(/[^a-z0-9]/g,"");}
+function findTeamByName(nm){
+  var k=normTeamName(nm); if(k.length<3) return null;
+  var rows=allTeams(), hit=rows.filter(function(r){return normTeamName(r.name)===k;})[0];
+  if(!hit) hit=rows.filter(function(r){var q=normTeamName(r.name); return q.length>=4&&(q.indexOf(k)>=0||k.indexOf(q)>=0);})[0];
+  return hit||null;
+}
+function missingOf(p){
+  var mis=[];
+  if(p.ovr==null) mis.push("OVR");
+  if(p.age==null) mis.push("age");
+  if(!p.pos) mis.push("position");
+  if(p.kind==="Contract"&&!p.sal.some(function(v){return v!=null;})) mis.push("salary");
+  return mis;
+}
+function applyRows(list,log,arr,undo){
+  var added=0,upd=0,skipped=0,miss=[],notes=[];
+  arr.forEach(function(r){
+    if(!r||!r.name||!String(r.name).trim()){skipped++;return;}
+    var sal=(Array.isArray(r.salaries)?r.salaries:[]).slice(0,NY).map(function(v){return num(v);});
+    while(sal.length<NY) sal.push(null);
+    var kind=["Contract","Dead money","Cap hold"].indexOf(r.kind)>=0?r.kind:"Contract";
+    var shown=num(r.ovr), delta=num(r.ovrChange), base=shown==null?null:(undo&&delta!=null?shown-delta:shown);
+    var rec={name:String(r.name).trim(),pos:r.pos?String(r.pos):"",age:num(r.age),ovr:base,ovrShown:shown,kind:kind,sal:sal,opt:["Player","Team"].indexOf(r.option)>=0?r.option:"None",note:r.note?String(r.note):"",shot:1};
+    var m_=missingOf(rec); if(m_.length) miss.push({name:rec.name,fields:m_});
+    if(rec.note) notes.push({name:rec.name,note:rec.note});
+    var ex=list.filter(function(p){return (p.name||"").toLowerCase()===rec.name.toLowerCase();})[0];
+    if(ex){
+      if(rec.ovr!=null&&ex.ovr!=null&&rec.ovr!==ex.ovr) logRating(ex.name,ex.ovr,rec.ovr,"screenshot",log);
+      ex.pos=rec.pos||ex.pos;ex.age=rec.age!=null?rec.age:ex.age;if(rec.ovr!=null){ex.ovr=rec.ovr;ex.ovrShown=rec.ovrShown;}ex.kind=rec.kind;
+      rec.sal.forEach(function(v,i){if(v!=null)ex.sal[i]=v;});ex.opt=rec.opt!=="None"?rec.opt:ex.opt;ex.note=rec.note||ex.note;ex.shot=1;upd++;
+    } else {norm(rec);list.push(rec);added++;}
+  });
+  return {added:added,upd:upd,skipped:skipped,miss:miss,notes:notes};
+}
+function showReport(level,head,items){
+  var box=$("read-report"), cap=14;
+  var h='<div class="banner '+level+'"><strong>'+esc(head)+'</strong>';
+  if(items&&items.length){
+    h+='<ul class="rep-list">'+items.slice(0,cap).map(function(i){return '<li class="'+i.level+'">'+esc(i.text)+'</li>';}).join("")+'</ul>';
+    if(items.length>cap) h+='<p class="src" style="margin-top:6px">And '+(items.length-cap)+' more. Rows with a "missing" tag in the Contracts table show the rest.</p>';
+  }
+  box.innerHTML=h+'</div>';
 }
 async function readShots(){
   if(!sampleFn||!shots.length) return;
   ctl=new AbortController(); $("btn-read").disabled=true; $("btn-stop").hidden=false;
-  var msg=$("read-msg"); msg.textContent="Reading "+shots.length+" screenshot"+(shots.length>1?"s":"")+"…";
+  var msg=$("read-msg"); msg.textContent="Reading "+shots.length+" screenshot"+(shots.length>1?"s":"")+"…"; $("read-report").innerHTML="";
   try{
     var blobs=shots.slice(0,maxImgs).map(function(s){return s.blob;});
     var out=await sampleFn.json(prompt_(),{images:blobs,signal:ctl.signal,modelTier:"default"});
-    var arr=out&&Array.isArray(out.players)?out.players:[];
-    if(!arr.length){msg.textContent="No player rows were found. Try a sharper screenshot of the contracts screen.";return;}
-    S.players=S.players.filter(function(p){return !p.ex;});
-    var added=0,upd=0,undo=S.settings.undoDelta?1:0;
-    arr.forEach(function(r){
-      if(!r||!r.name) return;
-      var sal=(Array.isArray(r.salaries)?r.salaries:[]).slice(0,NY).map(function(v){return num(v);});
-      while(sal.length<NY) sal.push(null);
-      var kind=["Contract","Dead money","Cap hold"].indexOf(r.kind)>=0?r.kind:"Contract";
-      var shown=num(r.ovr), delta=num(r.ovrChange), base=shown==null?null:(undo&&delta!=null?shown-delta:shown);
-      var rec={name:String(r.name).trim(),pos:r.pos?String(r.pos):"",age:num(r.age),ovr:base,ovrShown:shown,kind:kind,sal:sal,opt:["Player","Team"].indexOf(r.option)>=0?r.option:"None",note:r.note?String(r.note):"",shot:1};
-      var ex=S.players.filter(function(p){return (p.name||"").toLowerCase()===rec.name.toLowerCase();})[0];
-      if(ex){
-        if(rec.ovr!=null&&ex.ovr!=null&&rec.ovr!==ex.ovr) logRating(ex.name,ex.ovr,rec.ovr,"screenshot");
-        ex.pos=rec.pos||ex.pos;ex.age=rec.age!=null?rec.age:ex.age;if(rec.ovr!=null){ex.ovr=rec.ovr;ex.ovrShown=rec.ovrShown;}ex.kind=rec.kind;
-        rec.sal.forEach(function(v,i){if(v!=null)ex.sal[i]=v;});ex.opt=rec.opt!=="None"?rec.opt:ex.opt;ex.note=rec.note||ex.note;ex.shot=1;upd++;
-      } else {norm(rec);S.players.push(rec);added++;}
+    var issues=[];
+    if(shots.length>maxImgs) issues.push({level:"bad",text:"Only the first "+maxImgs+" of "+shots.length+" screenshots could be sent. The rest were not read. Remove the ones already read and read the others separately."});
+    (out&&Array.isArray(out.images)?out.images:[]).forEach(function(im){
+      if(!im||im.status==="read") return;
+      var bad=im.status==="unreadable";
+      issues.push({level:bad?"bad":"warn",text:"Screenshot "+(im.index!=null?im.index:"?")+" "+(bad?"could not be read":"was only partly readable")+(im.note?": "+im.note:".")});
     });
-    var t=out.team||{}, seen=[];
-    if(num(t.payroll)!=null) seen.push("payroll "+m(num(t.payroll)));
-    if(num(t.cap)!=null) seen.push("cap "+m(num(t.cap)));
-    if(num(t.tax)!=null) seen.push("tax line "+m(num(t.tax)));
-    msg.textContent="Added "+added+" and updated "+upd+" rows."+(seen.length?" Screens also showed "+seen.join(", ")+". Compare with your settings on the League tab.":"")+" Check the tagged rows against the screen.";
-    save(); renderAll();
+    (out&&Array.isArray(out.problems)?out.problems:[]).forEach(function(t){if(t) issues.push({level:"warn",text:String(t)});});
+    var groups=out&&Array.isArray(out.teams)?out.teams:(out&&Array.isArray(out.players)?[{name:null,players:out.players,payroll:out.team&&out.team.payroll}]:[]);
+    groups=groups.filter(function(g){return g&&Array.isArray(g.players)&&g.players.length;});
+    if(!groups.length){
+      msg.textContent="No player rows were read.";
+      showReport("bad","Nothing could be read from these screenshots. Try a sharper, closer screenshot of the roster or contracts screen.",issues);
+      return;
+    }
+    S.players=S.players.filter(function(p){return !p.ex;});
+    var undo=S.settings.undoDelta?1:0, report=[], ids={}, seen=[], nrows=0;
+    groups.forEach(function(g){
+      var nm=g.name?String(g.name).trim():"", hit=nm?findTeamByName(nm):null, label, list, log, tid, created=false;
+      if(!nm||(hit&&hit.active)){label=S.team.name; tid=S.team.id; list=S.players; log=S.ratingLog;}
+      else if(hit){var o=S.others.filter(function(x){return x.id===hit.id;})[0]; label=o.name; tid=o.id; list=o.data.players; log=o.data.ratingLog;}
+      else{var t={id:uid(),name:nm,data:blankTeamData()}; S.others.push(t); label=nm; tid=t.id; list=t.data.players; log=t.data.ratingLog; created=true;}
+      var res=applyRows(list,log,g.players,undo); ids[tid]=1; nrows+=res.added+res.upd;
+      report.push(label+(created?" (new team)":"")+": "+res.added+" added, "+res.upd+" updated"+(!nm?" (no team name visible, so the open team)":""));
+      if(num(g.payroll)!=null) seen.push(label+" payroll "+m(num(g.payroll)));
+      if(res.skipped) issues.push({level:"bad",text:label+": "+res.skipped+" row"+(res.skipped>1?"s":"")+" had no readable player name and "+(res.skipped>1?"were":"was")+" skipped."});
+      res.miss.forEach(function(x){issues.push({level:x.fields.indexOf("salary")>=0?"bad":"warn",text:label+", "+x.name+": could not read "+x.fields.join(", ")+"."});});
+      res.notes.forEach(function(x){issues.push({level:"warn",text:label+", "+x.name+": "+x.note});});
+      (Array.isArray(g.unreadable)?g.unreadable:[]).forEach(function(t){if(t) issues.push({level:"warn",text:label+": "+String(t)});});
+    });
+    var tids=Object.keys(ids);
+    shots.forEach(function(x){URL.revokeObjectURL(x.url);}); shots=[];
+    save();
+    if(tids.length===1&&tids[0]!==S.team.id) switchTeam(tids[0]); else renderAll();
+    msg.textContent=report.join(". ")+"."+(seen.length?" Screens also showed "+seen.join(", ")+". Compare with your cap lines on the League tab.":"")+" Screenshots cleared.";
+    var nbad=issues.filter(function(i){return i.level==="bad";}).length;
+    if(!issues.length) showReport("good","Read "+nrows+" rows and every field was filled. Still compare the tagged rows against the screen.",[]);
+    else showReport(nbad?"bad":"warn",issues.length+" thing"+(issues.length>1?"s":"")+" could not be read or need a look. The rows are in the table, tagged with what is missing.",issues);
   }catch(e){
     var c=e&&e.code;
-    msg.textContent=c==="cancelled"?"Stopped.":
+    var txt=c==="cancelled"?"Stopped.":
       c==="not_granted"?"Reading screenshots was not allowed for this page. You can still enter contracts by hand.":
       c==="rate_limited"?"Too many requests or your usage limit was reached. Try again later.":
       c==="image_rejected"?"One of the images could not be read. Remove it or use a PNG or JPG under 20 MB.":
       c==="invalid_json"?"The reply could not be turned into rows. Try fewer screenshots at once, or a closer crop.":
       "Could not read the screenshots"+(e&&e.message?" ("+e.message+")":"")+". Try again.";
+    msg.textContent=txt;
+    if(c!=="cancelled") showReport("bad","Reading failed. Nothing was added. "+txt,[]);
   }finally{
     ctl=null; $("btn-stop").hidden=true; renderShots();
   }
@@ -1155,11 +1266,96 @@ function renderTabs(){
   showTab();
 }
 
+/* ---------- TEAMS ---------- */
+var TEAM_KEYS=["players","rot","picks","targets","scen","ext","ratingLog"];
+function slug(n){return String(n||"team").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"")||"team";}
+function blankTeamData(){var d=defaults(); return {players:[],rot:{m:{},st:{},pp:{}},picks:[],targets:[],scen:[],ratingLog:[],ext:d.ext};}
+function stashTeam(){var o={}; TEAM_KEYS.forEach(function(k){o[k]=S[k];}); return o;}
+function switchTeam(id){
+  if(!id||id===S.team.id){renderTeamBar();return;}
+  var o=S.others.filter(function(x){return x.id===id;})[0]; if(!o){renderTeamBar();return;}
+  var cur={id:S.team.id,name:S.team.name,data:stashTeam()};
+  S.others=S.others.filter(function(x){return x!==o;}); S.others.push(cur);
+  TEAM_KEYS.forEach(function(k){S[k]=o.data[k];});
+  S.team={id:o.id,name:o.name};
+  outSet={}; lastFiller=[]; save(); renderAll();
+}
+function teamRow(id,name,list,active){
+  var set=S.settings, pay=payOf(list,0), exp=0, top=null;
+  list.forEach(function(p){
+    if((p.sal[0]||0)>0&&!((p.sal[1]||0)>0)) exp+=p.sal[0];
+    if(p.kind==="Contract"&&p.ovr!=null&&(!top||p.ovr>top.ovr)) top=p;
+  });
+  var n=list.filter(function(p){return (p.sal[0]||0)>0;}).length;
+  return {id:id,name:name,active:active,n:n,empty:!list.length,pay:pay,space:set.cap-pay,taxRoom:set.tax-pay,exp:exp,top:top};
+}
+function allTeams(){
+  var rows=[teamRow(S.team.id,S.team.name,S.players,true)];
+  S.others.forEach(function(o){rows.push(teamRow(o.id,o.name,o.data.players||[],false));});
+  return rows;
+}
+function renderTeamBar(){
+  var rows=allTeams().sort(function(a,b){return a.name.localeCompare(b.name);});
+  $("team-sel").innerHTML=rows.map(function(r){return '<option value="'+esc(r.id)+'"'+(r.active?" selected":"")+'>'+esc(r.name)+'</option>';}).join("");
+  $("roster-team").textContent="With no team name visible, screenshots go to "+S.team.name+" (the open team). A visible team name sends the rows to that team instead.";
+}
+function renderTeams(){
+  var L=labels();
+  var rows=allTeams().sort(function(a,b){return (a.empty-b.empty)||(b.space-a.space);});
+  var h='<thead><tr><th class="l">Team</th><th>Players</th><th>Payroll '+esc(L[0])+'</th><th>Cap space</th><th>Room to tax line</th><th>Expiring after</th><th class="l">Best player</th><th></th></tr></thead><tbody>';
+  rows.forEach(function(r){
+    h+='<tr><td class="l"><strong>'+esc(r.name)+'</strong>'+(r.active?' <span class="badge ex">open</span>':'')+(r.empty?' <span class="badge">no data</span>':'')+'</td>'+
+      (r.empty?'<td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td class="l">—</td>':
+      '<td>'+r.n+'</td><td>'+m(r.pay)+'</td><td class="'+sgn(r.space)+'">'+m(r.space)+'</td><td class="'+sgn(r.taxRoom)+'">'+m(r.taxRoom)+'</td><td>'+(r.exp?m(r.exp):"—")+'</td><td class="l">'+(r.top?esc(r.top.name||"Unnamed")+' <span class="muted">'+r.top.ovr+' OVR</span>':"—")+'</td>')+
+      '<td>'+(r.active?"":'<button type="button" data-open="'+esc(r.id)+'">Open</button> <button type="button" data-tdel="'+esc(r.id)+'" aria-label="Delete '+esc(r.name)+'">×</button>')+'</td></tr>';
+  });
+  h+='</tbody>';
+  $("tm-tbl").innerHTML=h;
+  renderAbsorb();
+}
+function renderAbsorb(){
+  var sal=num($("ab-sal").value)||0, set=S.settings, box=$("ab-out");
+  if(!sal){box.innerHTML='<p class="muted">Enter a salary to see which teams could take it.</p>';return;}
+  var rows=allTeams().filter(function(r){return !r.active&&!r.empty;}).sort(function(a,b){return b.space-a.space;});
+  if(!rows.length){box.innerHTML='<p class="muted">No other team has data yet. Add a team on this tab, open it, and paste its screenshots on the Roster tab.</p>';return;}
+  var need=Math.max(0,(sal-set.matchPlus)/(set.matchPct/100));
+  var h='<div class="scroll"><table class="ytable"><thead><tr><th class="l">Team</th><th>Cap space</th><th class="l">Result</th></tr></thead><tbody>';
+  rows.forEach(function(r){
+    h+='<tr><td class="l">'+esc(r.name)+'</td><td class="'+sgn(r.space)+'">'+m(r.space)+'</td><td class="l">'+(r.space>=sal?'<span class="pill ok">can absorb</span>':'<span class="pill na">needs salary back</span> must send at least '+m(need,2))+'</td></tr>';
+  });
+  h+='</tbody></table></div>';
+  box.innerHTML=h;
+}
+function addTeam(){
+  var el=$("tm-name"), nm=(el.value||"").trim(), msg=$("tm-msg"), all=allTeams();
+  if(!nm){msg.textContent="Type a team name first.";return;}
+  if(all.some(function(r){return r.name.toLowerCase()===nm.toLowerCase();})){msg.textContent="A team with that name already exists.";return;}
+  if(all.length>=30){msg.textContent="The league is limited to 30 teams here.";return;}
+  var t={id:uid(),name:nm,data:blankTeamData()}; S.others.push(t); el.value="";
+  switchTeam(t.id);
+  $("tm-msg").textContent="Added "+nm+" and opened it. Paste its screenshots on the Roster tab.";
+}
+function renameTeam(){
+  var el=$("tm-name"), nm=(el.value||"").trim(), msg=$("tm-msg");
+  if(!nm){msg.textContent="Type the new name first.";return;}
+  if(allTeams().some(function(r){return !r.active&&r.name.toLowerCase()===nm.toLowerCase();})){msg.textContent="A team with that name already exists.";return;}
+  S.team.name=nm; el.value=""; save(); renderTeamBar(); renderTeams(); msg.textContent="Renamed the open team to "+nm+".";
+}
+function onTeams(e){
+  var t=e.target, op=t.getAttribute&&t.getAttribute("data-open"), dl=t.getAttribute&&t.getAttribute("data-tdel");
+  if(op){switchTeam(op);return;}
+  if(dl){
+    var k="del"+dl;
+    if(!armed[k]){armed[k]=1; t.textContent="Delete?"; setTimeout(function(){delete armed[k]; if(t.isConnected) t.textContent="×";},4000); return;}
+    delete armed[k]; S.others=S.others.filter(function(o){return o.id!==dl;}); save(); renderTeamBar(); renderTeams();
+  }
+}
+
 /* ---------- orchestration ---------- */
-function refresh(){renderSummary();renderRotChecks();renderTrade();renderExtOut();renderScen();}
+function refresh(){renderSummary();renderRotChecks();renderTrade();renderExtOut();renderScen();renderTeams();}
 function renderAll(){
   renderSettings();renderLedger();renderLog();renderRotTable();renderExtInputs();renderPicks();renderTargets();renderDevTable();
-  refresh(); $("rules").value=S.rules;
+  renderTeamBar(); refresh(); $("rules").value=S.rules;
 }
 
 function init(){
@@ -1189,6 +1385,9 @@ function init(){
   bindGen("picks-tbl"); bindGen("targets-tbl");
   $("btn-pick-add").addEventListener("click",function(){var y=seasonStart();S.picks.push({id:uid(),year:y==null?null:y+1,round:"1",team:"Dallas",status:"Own",prot:"",note:""});save();renderPicks();});
   $("btn-target-add").addEventListener("click",function(){S.targets.push({id:uid(),name:"",pos:"",year:null,tier:"Top target",note:""});save();renderTargets();});
+  $("team-sel").addEventListener("change",function(e){switchTeam(e.target.value);});
+  $("btn-tm-add").addEventListener("click",addTeam); $("btn-tm-ren").addEventListener("click",renameTeam);
+  $("tm-tbl").addEventListener("click",onTeams); $("ab-sal").addEventListener("input",renderAbsorb);
   var dv=$("dev-tbl"); dv.addEventListener("input",onDev); dv.addEventListener("change",onDev);
   $("btn-sc-snap").addEventListener("click",function(){
     var nm=($("sc-name").value||"").trim()||"Snapshot "+(S.scen.length+1);
@@ -1208,7 +1407,7 @@ function init(){
   });
   $("btn-clear-ex").addEventListener("click",function(){S.players=S.players.filter(function(p){return !p.ex;});save();renderAll();});
   $("btn-json").addEventListener("click",function(){saveFile("cap-room.json",JSON.stringify(S,null,2));});
-  $("btn-csv").addEventListener("click",function(){saveFile("cap-room-contracts.csv",csv());});
+  $("btn-csv").addEventListener("click",function(){saveFile("cap-room-"+slug(S.team.name)+".csv",csv());});
   $("imp-file").addEventListener("change",function(e){if(e.target.files[0]) importJSON(e.target.files[0]); e.target.value="";});
 
   var drop=$("drop");
