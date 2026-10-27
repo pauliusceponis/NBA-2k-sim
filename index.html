@@ -117,6 +117,10 @@ tbody tr:hover{background:var(--surface2)}
 .thumbs{display:flex;flex-wrap:wrap;gap:10px}
 .thumb{position:relative;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--surface);width:150px}
 .thumb img{display:block;width:100%;height:96px;object-fit:cover}
+.ledger tfoot td{font-family:var(--f-data);font-variant-numeric:tabular-nums;font-weight:600;padding:6px 8px;text-align:right;border-top:1px solid var(--line)}
+.ledger tfoot tr:first-child td{border-top:2px solid var(--ink)}
+.ledger tfoot td:first-child{text-align:left;font-family:var(--f-body)}
+.danger{background:var(--bad-bg)!important;color:var(--bad)!important;border-color:var(--bad)!important}
 .thumbwrap{display:flex;flex-direction:column;gap:4px;width:150px}
 .thumbwrap select{width:100%;font-size:12px;padding:4px 6px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:6px}
 .pv-g{margin-bottom:12px}
@@ -250,8 +254,10 @@ a{color:var(--accent)}
       <h2 id="h-ledger">Contracts</h2>
       <div class="toolbar">
         <button id="btn-add" type="button">Add row</button>
+        <button id="btn-restore" type="button" disabled>Restore the last removed player</button>
         <span class="muted" style="align-self:center">Salaries in $ millions. Leave a season blank when the contract has ended.</span>
       </div>
+      <p class="src" id="del-msg" role="status"></p>
       <div class="opt-key" id="opt-key" hidden><span><i class="opt-p"></i>Player option years</span><span><i class="opt-t"></i>Team option years</span><span>The option starts in the "Option from" season and the colour runs to the end of the contract.</span></div>
       <div class="panel scroll"><table class="ledger" id="ledger"></table></div>
     </section>
@@ -535,7 +541,7 @@ var EXAMPLES=[
  {name:"Waived player",pos:"",age:null,ovr:null,kind:"Dead money",sal:[3,3,null,null,null],opt:"None",note:"Stretch example",ex:1}
 ];
 
-var S=null, shots=[], ctl=null, outSet={}, seq=1, lastFiller=[], lastOvr={}, armed={};
+var lastDel=null, S=null, shots=[], ctl=null, outSet={}, seq=1, lastFiller=[], lastOvr={}, armed={};
 var maxImgs=8, canRead=false, sampleFn=null, saveT=null;
 
 function clone(o){return JSON.parse(JSON.stringify(o));}
@@ -856,10 +862,23 @@ function renderLedger(){
       '<td class="x">'+(p.ex?'<span class="badge ex">example</span> ':"")+(p.shot?'<span class="badge check" id="b-'+id+'">'+(missingOf(p).length?'missing '+esc(missingOf(p).join(", ")):'check')+'</span> ':"")+'<button type="button" data-del="'+id+'" aria-label="Delete row">×</button></td></tr>';
   });
   if(!S.players.length) h+='<tr><td colspan="'+(NY+10)+'" class="muted" style="text-align:center;padding:18px">No contracts yet. Paste a screenshot or add a row.</td></tr>';
-  h+='</tbody>';
+  h+='</tbody><tfoot>'+[["pay","Team payroll"],["sp","Cap space"],["tx","Room to tax line"],["ap","Room to apron"],["n","Players paid"]].map(function(r){return '<tr><td colspan="6">'+r[1]+'</td>'+L.map(function(l,i){return '<td id="lf-'+r[0]+i+'"></td>';}).join("")+'<td colspan="4"></td></tr>';}).join("")+'</tfoot>';
   $("ledger").innerHTML=h;
+  renderLedgerFoot();
   var k=$("opt-key"); if(k) k.hidden=!S.players.some(function(p){return p.opt==="Player"||p.opt==="Team";});
   $("ex-banner").hidden=!S.players.some(function(p){return p.ex;});
+}
+function renderLedgerFoot(){
+  var set=S.settings;
+  for(var i=0;i<NY;i++){
+    var pay=payroll(i), n=S.players.filter(function(p){return (p.sal[i]||0)>0;}).length;
+    function put(id,txt,cls){var el=$(id); if(el){el.textContent=txt; el.className=cls||"";}}
+    put("lf-pay"+i,m(pay),pay>set.apron?"neg":pay>set.tax?"mid":"");
+    put("lf-sp"+i,m(set.cap-pay),sgn(set.cap-pay));
+    put("lf-tx"+i,m(set.tax-pay),sgn(set.tax-pay));
+    put("lf-ap"+i,m(set.apron-pay),sgn(set.apron-pay));
+    put("lf-n"+i,String(n),"");
+  }
 }
 function logRating(name,from,to,src,log){
   if(from==null||to==null||from===to) return;
@@ -879,6 +898,14 @@ function onLedgerFocus(e){
   var t=e.target; if(t.getAttribute&&t.getAttribute("data-f")==="ovr"){var p=byId(t.getAttribute("data-id")); if(p) lastOvr[p.id]=p.ovr;}
 }
 function byId(id){return S.players.filter(function(q){return q.id===id;})[0];}
+function renderRestore(){var b=$("btn-restore"); if(b) b.disabled=!lastDel;}
+function restoreDeleted(){
+  if(!lastDel) return;
+  var t=tdata(lastDel.tid)||tdata(S.team.id), p=lastDel.p;
+  if(t.d.players.some(function(q){return q.id===p.id;})) p.id=uid();
+  t.d.players.push(p); touch(t.d,"roster"); logAct("Restored player",(p.name||"Unnamed")+" was put back on "+t.name+".");
+  var nm=p.name||"The player"; lastDel=null; save(); renderAll(); renderRestore(); $("del-msg").textContent=nm+" is back on "+t.name+".";
+}
 function recolorOpt(p){
   var cls=p.opt==="Player"?"opt-p":p.opt==="Team"?"opt-t":"", L=labels();
   p.sal.forEach(function(v,i){var el=$("r-"+p.id+"-s"+i); if(!el) return; el.classList.remove("opt-p","opt-t"); if(cls&&isOptYear(p,i)){el.classList.add(cls); el.title=p.opt+" option, from "+L[optStart(p)];} else el.removeAttribute("title");});
@@ -901,7 +928,7 @@ function onLedger(e){
     if(f==="ovr"&&lastOvr[id]!==undefined){logRating(p.name||"Unnamed",lastOvr[id],p.ovr,"manual edit");lastOvr[id]=p.ovr;renderLog();}
     renderRotTable();renderExtInputs();renderDevTable();
   }
-  touch(S,"roster"); save(); refresh();
+  touch(S,"roster"); renderLedgerFoot(); save(); refresh();
 }
 
 /* ---------- ROTATION ---------- */
@@ -2525,7 +2552,17 @@ function init(){
   lg.addEventListener("input",onLedger); lg.addEventListener("change",onLedger); lg.addEventListener("focusin",onLedgerFocus);
   lg.addEventListener("click",function(e){
     var id=e.target.getAttribute&&e.target.getAttribute("data-del"); if(!id) return;
-    S.players=S.players.filter(function(p){return p.id!==id;}); delete outSet[id]; touch(S,"roster"); save(); renderAll();
+    var btn=e.target, pp=byId(id); if(!pp) return;
+    if(!armed["del"+id]){
+      armed["del"+id]=1; btn.textContent="Remove?"; btn.classList.add("danger"); btn.setAttribute("aria-label","Click again to remove "+(pp.name||"this player")+" from "+S.team.name);
+      $("del-msg").textContent="Click Remove? again to take "+(pp.name||"this player")+" off "+S.team.name+". It resets after a few seconds.";
+      setTimeout(function(){delete armed["del"+id]; if(btn.isConnected){btn.textContent="×";btn.classList.remove("danger");btn.setAttribute("aria-label","Delete row");} if($("del-msg").textContent.indexOf("Click Remove?")===0) $("del-msg").textContent="";},4000);
+      return;
+    }
+    delete armed["del"+id];
+    lastDel={tid:S.team.id,p:clone(pp)};
+    S.players=S.players.filter(function(p){return p.id!==id;}); delete outSet[id]; touch(S,"roster"); logAct("Removed player",(pp.name||"Unnamed")+" was removed from "+S.team.name+".");
+    save(); renderAll(); renderRestore(); $("del-msg").textContent="Removed "+(pp.name||"the player")+". Use Restore the last removed player to bring him back.";
   });
   $("settings").addEventListener("input",onSettings); $("settings").addEventListener("change",onSettings);
   $("rules").addEventListener("input",function(){S.rules=$("rules").value;save();});
@@ -2615,6 +2652,7 @@ function init(){
   $("tp-box").addEventListener("click",function(e){if(e.target.id==="btn-tp-apply") applyParsedTrade();});
   $("tp-box").addEventListener("change",function(e){if(e.target.id==="tp-over"){var b=$("btn-tp-apply"); if(b) b.disabled=!e.target.checked;}});
   $("btn-undo").addEventListener("click",undoLast);
+  $("btn-restore").addEventListener("click",restoreDeleted);
   $("btn-plog-clear").addEventListener("click",function(){S.plog=[];save();renderPlog();});
   $("prof-sel").addEventListener("change",function(e){prof.id=e.target.value;renderProfile();});
   $("prof-box").addEventListener("input",onProfile); $("prof-box").addEventListener("click",onProfile);
