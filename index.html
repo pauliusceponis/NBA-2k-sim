@@ -1985,7 +1985,11 @@ function init(){
   $("btn-logo-reset").addEventListener("click",function(){setLogo(null);try{localStorage.removeItem("caproom-logo");}catch(x){}});
 
   if(window.claude&&claude.use){
-    claude.use("sample").then(function(fn){
+    claude.use("user").then(function(u){return u?u.isOwner():false;}).catch(function(){return false;}).then(function(owner){
+      if(!owner){$("read-msg").textContent="Reading screenshots is limited to the owner of this page, because it spends Claude usage. Enter contracts by hand, import a workbook, or ask the owner to read the screenshots.";return null;}
+      return claude.use("sample");
+    }).then(function(fn){
+      if(fn===null) return;
       if(!fn){$("read-msg").textContent="Reading screenshots is not available in this view. Enter contracts by hand in the table below.";return;}
       sampleFn=fn;
       return fn.limits().then(function(l){
