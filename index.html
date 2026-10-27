@@ -231,6 +231,7 @@ a{color:var(--accent)}
     <section aria-labelledby="h-shots">
       <h2 id="h-shots">Screenshots</h2>
       <p class="muted" id="roster-team"></p>
+      <p class="src" id="roster-upd"></p>
       <div id="drop" class="drop" tabindex="0" role="button" aria-label="Add screenshots">
         <strong>Paste screenshots here</strong>
         <span class="muted">Press Ctrl+V (Cmd+V on Mac) anywhere on this page, drop image files, or click to choose them. Roster, contracts and team salary screens all work.</span>
@@ -244,7 +245,7 @@ a{color:var(--accent)}
       </div>
       <p id="read-msg" class="muted" role="status"></p>
       <div id="read-report" aria-live="polite"></div>
-      <p class="src">If a team name is visible on the screen, the rows go to that team: an existing one is matched by name, and an unknown name creates a new team. With no name visible they go to the open team. Rows read from a screenshot are tagged <span class="badge check">check</span> until you edit them. Claude can misread a digit, so compare against the screen. If a rating shows a ▲ or ▼ change, the League tab setting decides whether it is undone to get the base rating.</p>
+      <p class="src">If a team name is visible on the screen, the rows go to that team: an existing one is matched by name, and an unknown name creates a new team. With no name visible they go to the open team. Screens that list draft picks or league standings are read too: picks go to the team named on the screen, standings go to every team listed. Rows read from a screenshot are tagged <span class="badge check">check</span> until you edit them. Claude can misread a digit, so compare against the screen. If a rating shows a ▲ or ▼ change, the League tab setting decides whether it is undone to get the base rating.</p>
     </section>
     <section aria-labelledby="h-ledger">
       <h2 id="h-ledger">Contracts</h2>
@@ -339,6 +340,7 @@ a{color:var(--accent)}
     <section aria-labelledby="h-picks">
       <h2 id="h-picks">Draft pick ledger</h2>
       <div id="picks-sum" class="tiles"></div>
+      <p class="src" id="picks-upd"></p>
       <div class="toolbar"><button id="btn-pick-add" type="button">Add pick</button></div>
       <div class="panel scroll"><table class="ledger" id="picks-tbl"></table></div>
     </section>
@@ -398,7 +400,8 @@ a{color:var(--accent)}
   <div class="tabpane" data-tab="standings">
     <section aria-labelledby="h-st">
       <h2 id="h-st">Standings</h2>
-      <p class="muted">Enter each team's record. The teams with the worst records go into the draft lottery. Lottery size, picks drawn and the odds are on the League tab.</p>
+      <p class="muted">Enter each team's record, or paste a standings screenshot on the Roster tab. The teams with the worst records go into the draft lottery. Lottery size, picks drawn and the odds are on the League tab.</p>
+      <p class="src" id="st-upd"></p>
       <div class="toolbar"><button id="btn-rec-clear" type="button">Clear all records</button></div>
       <div class="panel scroll"><table class="ytable" id="st-tbl"></table></div>
     </section>
@@ -532,6 +535,7 @@ function normState(st){
   fixTeam(st,d);
   if(!Array.isArray(st.trades)) st.trades=[];
   if(!st.records||typeof st.records!=="object") st.records={};
+  if(typeof st.recordsAt!=="string") st.recordsAt="";
   if(!st.team||!st.team.id||!st.team.name) st.team={id:"t0",name:(st.seedVer&&st.players.some(function(p){return p.id==="s1";}))?"Dallas Mavericks":"My team"};
   if(!Array.isArray(st.others)) st.others=[];
   st.others=st.others.filter(function(o){return o&&o.name;});
@@ -547,6 +551,7 @@ function fixTeam(st,d){
   if(!st.plan||typeof st.plan!=="object") st.plan={};
   if(!Array.isArray(st.plans)) st.plans=[];
   if(typeof st.planBase!=="string") st.planBase="";
+  if(!st.upd||typeof st.upd!=="object") st.upd={};
   st.plans.forEach(function(t){if(!t.id) t.id=uid(); if(!t.plan||typeof t.plan!=="object") t.plan={};});
   ["picks","targets","scen","ratingLog"].forEach(function(k){if(!Array.isArray(st[k])) st[k]=[];});
   if(!st.rot||typeof st.rot!=="object") st.rot={};
@@ -817,7 +822,7 @@ function onLedger(e){
     if(f==="ovr"&&lastOvr[id]!==undefined){logRating(p.name||"Unnamed",lastOvr[id],p.ovr,"manual edit");lastOvr[id]=p.ovr;renderLog();}
     renderRotTable();renderExtInputs();renderDevTable();
   }
-  save(); refresh();
+  touch(S,"roster"); save(); refresh();
 }
 
 /* ---------- ROTATION ---------- */
@@ -1080,12 +1085,12 @@ function bindGen(id){
   function h(e){
     var t=e.target, list=t.getAttribute("data-list"), rid=t.getAttribute("data-id"), f=t.getAttribute("data-f"); if(!list) return;
     var r=S[list].filter(function(x){return x.id===rid;})[0]; if(!r) return;
-    r[f]=t.type==="number"?num(t.value):t.value; save(); if(list==="picks") renderPicksSum();
+    r[f]=t.type==="number"?num(t.value):t.value; if(list==="picks") touch(S,"picks"); save(); if(list==="picks"){renderPicksSum();renderUpd();renderTeams();}
   }
   el.addEventListener("input",h); el.addEventListener("change",h);
   el.addEventListener("click",function(e){
     var d=e.target.getAttribute&&e.target.getAttribute("data-gdel"); if(!d) return;
-    var a=d.split(":"); S[a[0]]=S[a[0]].filter(function(x){return x.id!==a[1];}); save();
+    var a=d.split(":"); S[a[0]]=S[a[0]].filter(function(x){return x.id!==a[1];}); if(a[0]==="picks") touch(S,"picks"); save();
     if(a[0]==="picks") renderPicks(); else renderTargets();
   });
 }
@@ -1204,9 +1209,9 @@ function renderShots(){
 }
 function prompt_(){
   var L=labels();
-  return "These images are screenshots from an NBA 2K26 franchise or sim league: rosters, contracts and team salary screens. "+
+  return "These images are screenshots from an NBA 2K26 franchise or sim league: rosters, contracts, team salary screens, draft pick lists and league standings. "+
   "Read every player row you can see and reply with only one JSON object of this shape:\n"+
-  '{"teams":[{"name":"Golden State Warriors","payroll":null,"cap":null,"tax":null,"players":[{"name":"First Last","pos":"PG","age":24,"ovr":78,"ovrChange":-1,"kind":"Contract","salaries":[12.5,13.1,null,null,null],"option":"None","note":""}]}]}\n'+
+  '{"teams":[{"name":"Golden State Warriors","payroll":null,"cap":null,"tax":null,"players":[{"name":"First Last","pos":"PG","age":24,"ovr":78,"ovrChange":-1,"kind":"Contract","salaries":[12.5,13.1,null,null,null],"option":"None","note":""}],"picks":[{"year":2027,"round":1,"team":"Dallas","protection":"","note":""}]}],"standings":[{"team":"Boston Celtics","w":10,"l":2}]}\n'+
   "Rules:\n"+
   "- Group players by team. Use one entry in teams for each team that is visible, and merge several screenshots of the same team into one entry.\n"+
   "- name is the team's name exactly as printed on the screen (a title, header, banner or team label). Use null when no team name is visible. Never guess a team from the players you recognise.\n"+
@@ -1216,6 +1221,8 @@ function prompt_(){
   '- option is "Player" or "Team" if an option year is shown, otherwise "None".\n'+
   "- Use null for any number you cannot read. Never guess a digit. Do not include a player twice.\n"+
   "- payroll, cap and tax for a team are $ millions if a screen shows them, otherwise null.\n"+
+  "- picks: when a screen lists draft picks a team owns, put each in that team's picks array. year is the draft year, round is 1 or 2, team is the team the pick originally belongs to as printed (for example Warriors), protection is any protection text shown, otherwise empty. Use [] when no picks are shown, and use an empty players array when a screen shows only picks.\n"+
+  "- standings: when a screen shows league standings, put one entry per team row in the top-level standings array with the team name as printed, w for wins and l for losses. Use [] when no standings are shown. Do not put standings rows into teams.\n"+
   "- Put anything unclear (cut-off text, a partly hidden row) in that player's note.\n"+
   '- Also report what you could not read. Add a top-level "images" array with one entry per screenshot in the order given: {"index":1,"status":"read","note":""}, where status is "read", "partly" or "unreadable" and note says why (blurry, cropped, no player rows). Add a top-level "problems" array of short strings for anything else you could not read or were unsure about, and an "unreadable" array of short strings inside a team entry for rows or values you skipped there. Use empty arrays when there is nothing to report.';
 }
@@ -1287,27 +1294,44 @@ async function readShots(){
     });
     (out&&Array.isArray(out.problems)?out.problems:[]).forEach(function(t){if(t) issues.push({level:"warn",text:String(t)});});
     var groups=out&&Array.isArray(out.teams)?out.teams:(out&&Array.isArray(out.players)?[{name:null,players:out.players,payroll:out.team&&out.team.payroll}]:[]);
-    groups=groups.filter(function(g){return g&&Array.isArray(g.players)&&g.players.length;});
-    if(!groups.length){
-      msg.textContent="No player rows were read.";
-      showReport("bad","Nothing could be read from these screenshots. Try a sharper, closer screenshot of the roster or contracts screen.",issues);
+    groups=groups.filter(function(g){return g&&((Array.isArray(g.players)&&g.players.length)||(Array.isArray(g.picks)&&g.picks.length));});
+    var stand=(out&&Array.isArray(out.standings)?out.standings:[]).filter(function(x){return x&&x.team&&num(x.w)!=null&&num(x.l)!=null;});
+    var badStand=(out&&Array.isArray(out.standings)?out.standings.length:0)-stand.length;
+    if(!groups.length&&!stand.length){
+      msg.textContent="Nothing was read.";
+      showReport("bad","Nothing could be read from these screenshots. Try a sharper, closer screenshot of a roster, contracts, picks or standings screen.",issues);
       return;
     }
     S.players=S.players.filter(function(p){return !p.ex;});
     var undo=S.settings.undoDelta?1:0, report=[], ids={}, seen=[], nrows=0;
     groups.forEach(function(g){
-      var nm=g.name?String(g.name).trim():"", hit=nm?findTeamByName(nm):null, label, list, log, tid, created=false;
-      if(!nm||(hit&&hit.active)){label=S.team.name; tid=S.team.id; list=S.players; log=S.ratingLog;}
-      else if(hit){var o=S.others.filter(function(x){return x.id===hit.id;})[0]; label=o.name; tid=o.id; list=o.data.players; log=o.data.ratingLog;}
-      else{var t={id:uid(),name:nm,data:blankTeamData()}; S.others.push(t); label=nm; tid=t.id; list=t.data.players; log=t.data.ratingLog; created=true;}
-      var res=applyRows(list,log,g.players,undo); ids[tid]=1; nrows+=res.added+res.upd;
-      report.push(label+(created?" (new team)":"")+": "+res.added+" added, "+res.upd+" updated"+(!nm?" (no team name visible, so the open team)":""));
+      var nm=g.name?String(g.name).trim():"", hit=nm?findTeamByName(nm):null, label, list, log, tid, created=false, holder;
+      if(!nm||(hit&&hit.active)){label=S.team.name; tid=S.team.id; list=S.players; log=S.ratingLog; holder=S;}
+      else if(hit){var o=S.others.filter(function(x){return x.id===hit.id;})[0]; label=o.name; tid=o.id; list=o.data.players; log=o.data.ratingLog; holder=o.data;}
+      else{var t={id:uid(),name:nm,data:blankTeamData()}; S.others.push(t); label=nm; tid=t.id; list=t.data.players; log=t.data.ratingLog; created=true; holder=t.data;}
+      var plrs=Array.isArray(g.players)?g.players:[], parts=[];
+      var res=applyRows(list,log,plrs,undo); ids[tid]=1; nrows+=res.added+res.upd;
+      if(plrs.length){touch(holder,"roster"); parts.push(res.added+" added, "+res.upd+" updated");}
+      if(Array.isArray(g.picks)&&g.picks.length){var pr=readPickRows(holder,g.picks,label,issues); if(pr.added||pr.same) touch(holder,"picks"); nrows+=pr.added; parts.push(pr.added+" picks added"+(pr.same?" ("+pr.same+" already there)":""));}
+      report.push(label+(created?" (new team)":"")+": "+parts.join(", ")+(!nm?" (no team name visible, so the open team)":""));
       if(num(g.payroll)!=null) seen.push(label+" payroll "+m(num(g.payroll)));
       if(res.skipped) issues.push({level:"bad",text:label+": "+res.skipped+" row"+(res.skipped>1?"s":"")+" had no readable player name and "+(res.skipped>1?"were":"was")+" skipped."});
       res.miss.forEach(function(x){issues.push({level:x.fields.indexOf("salary")>=0?"bad":"warn",text:label+", "+x.name+": could not read "+x.fields.join(", ")+"."});});
       res.notes.forEach(function(x){issues.push({level:"warn",text:label+", "+x.name+": "+x.note});});
       (Array.isArray(g.unreadable)?g.unreadable:[]).forEach(function(t){if(t) issues.push({level:"warn",text:label+": "+String(t)});});
     });
+    if(stand.length){
+      var now=new Date().toISOString(), ns=0, made=[];
+      stand.forEach(function(x){
+        var nm=String(x.team).trim(), hit=findTeamByName(nm);
+        if(!hit){var t=Object.assign({id:uid(),name:nm,data:blankTeamData()}); S.others.push(t); hit={id:t.id,name:nm}; made.push(nm);}
+        S.records[hit.id]={w:Math.max(0,Math.round(num(x.w))),l:Math.max(0,Math.round(num(x.l))),at:now}; ns++;
+      });
+      S.recordsAt=now; report.push("Standings: "+ns+" team"+(ns>1?"s":"")+" updated");
+      if(made.length) issues.push({level:"warn",text:"These standings teams were not in the league, so they were added as new teams: "+made.join(", ")+". If a name was misread, delete that team on the Teams tab."});
+      if(badStand>0) issues.push({level:"bad",text:badStand+" standings row"+(badStand>1?"s":"")+" had no readable team name or record and "+(badStand>1?"were":"was")+" skipped."});
+      nrows+=ns;
+    }
     var tids=Object.keys(ids);
     shots.forEach(function(x){URL.revokeObjectURL(x.url);}); shots=[];
     save();
@@ -1377,9 +1401,9 @@ function renderTabs(){
 }
 
 /* ---------- TEAMS ---------- */
-var TEAM_KEYS=["players","rot","picks","targets","scen","ext","ratingLog","plan","plans","planBase"];
+var TEAM_KEYS=["players","rot","picks","targets","scen","ext","ratingLog","plan","plans","planBase","upd"];
 function slug(n){return String(n||"team").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"")||"team";}
-function blankTeamData(){var d=defaults(); return {players:[],rot:{m:{},st:{},pp:{}},picks:[],targets:[],scen:[],ratingLog:[],ext:d.ext,plan:{},plans:[],planBase:""};}
+function blankTeamData(){var d=defaults(); return {players:[],rot:{m:{},st:{},pp:{}},picks:[],targets:[],scen:[],ratingLog:[],ext:d.ext,plan:{},plans:[],planBase:"",upd:{}};}
 function stashTeam(){var o={}; TEAM_KEYS.forEach(function(k){o[k]=S[k];}); return o;}
 function switchTeam(id){
   if(!id||id===S.team.id){renderTeamBar();return;}
@@ -1407,16 +1431,18 @@ function allTeams(){
 function renderTeamBar(){
   var rows=allTeams().sort(function(a,b){return a.name.localeCompare(b.name);});
   $("team-sel").innerHTML=rows.map(function(r){return '<option value="'+esc(r.id)+'"'+(r.active?" selected":"")+'>'+esc(r.name)+'</option>';}).join("");
+  renderUpd();
   $("roster-team").textContent="With no team name visible, screenshots go to "+S.team.name+" (the open team). A visible team name sends the rows to that team instead.";
 }
 function renderTeams(){
   var L=labels();
   var rows=allTeams().sort(function(a,b){return (a.empty-b.empty)||(b.space-a.space);});
-  var h='<thead><tr><th class="l">Team</th><th>Players</th><th>Payroll '+esc(L[0])+'</th><th>Cap space</th><th>Room to tax line</th><th>Expiring after</th><th class="l">Best player</th><th></th></tr></thead><tbody>';
+  var h='<thead><tr><th class="l">Team</th><th>Players</th><th>Payroll '+esc(L[0])+'</th><th>Cap space</th><th>Room to tax line</th><th>Expiring after</th><th class="l">Best player</th><th class="l">Last updated</th><th></th></tr></thead><tbody>';
   rows.forEach(function(r){
     h+='<tr><td class="l"><strong>'+esc(r.name)+'</strong>'+(r.active?' <span class="badge ex">open</span>':'')+(r.empty?' <span class="badge">no data</span>':'')+'</td>'+
       (r.empty?'<td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td class="l">—</td>':
       '<td>'+r.n+'</td><td>'+m(r.pay)+'</td><td class="'+sgn(r.space)+'">'+m(r.space)+'</td><td class="'+sgn(r.taxRoom)+'">'+m(r.taxRoom)+'</td><td>'+(r.exp?m(r.exp):"—")+'</td><td class="l">'+(r.top?esc(r.top.name||"Unnamed")+' <span class="muted">'+r.top.ovr+' OVR</span>':"—")+'</td>')+
+      '<td class="l" style="font-size:12px;line-height:1.5">'+updHtml(r.id)+'</td>'+
       '<td>'+(r.active?"":'<button type="button" data-open="'+esc(r.id)+'">Open</button> <button type="button" data-tdel="'+esc(r.id)+'" aria-label="Delete '+esc(r.name)+'">×</button>')+'</td></tr>';
   });
   h+='</tbody>';
@@ -1462,6 +1488,28 @@ function onTeams(e){
 
 /* ---------- shared helpers for the league tools ---------- */
 function byname(a,b){return a.name.localeCompare(b.name);}
+function touch(d,kind){if(!d) return; if(!d.upd||typeof d.upd!=="object") d.upd={}; d.upd[kind]=new Date().toISOString();}
+function fmtAt(iso){
+  if(!iso) return "not recorded";
+  var t=new Date(iso); if(isNaN(t.getTime())) return "not recorded";
+  return t.toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})+", "+t.toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+}
+function updOf(id){
+  var d=id===S.team.id?S:(S.others.filter(function(x){return x.id===id;})[0]||{}).data||{};
+  var u=d.upd||{}, r=S.records[id]||{};
+  return {roster:u.roster||"",picks:u.picks||"",stand:r.at||""};
+}
+function updHtml(id){
+  var u=updOf(id);
+  return "Roster: "+esc(fmtAt(u.roster))+"<br>Picks: "+esc(fmtAt(u.picks))+"<br>Standings: "+esc(fmtAt(u.stand));
+}
+function renderUpd(){
+  var u=updOf(S.team.id);
+  var a=$("roster-upd"); if(a) a.textContent=S.team.name+" roster last updated: "+fmtAt(u.roster)+".";
+  var b=$("picks-upd"); if(b) b.textContent=S.team.name+" picks last updated: "+fmtAt(u.picks)+".";
+  var c=$("st-upd"); if(c) c.textContent="League standings last updated: "+fmtAt(S.recordsAt)+".";
+  var h=$("team-profile"); if(h) h.innerHTML="<strong>"+esc(S.team.name)+"</strong> · "+updHtml(S.team.id).replace(/<br>/g," · ");
+}
 function tdata(id){
   if(id===S.team.id) return {id:id,name:S.team.name,d:S};
   var o=S.others.filter(function(x){return x.id===id;})[0]; return o?{id:o.id,name:o.name,d:o.data}:null;
@@ -1553,6 +1601,7 @@ function applyTrade(){
   var byId={}; T.forEach(function(t){byId[t.id]=t;});
   moves.forEach(function(mv){
     var from=byId[mv.from], to=byId[mv.to];
+    touch(from.d,mv.type==="pl"?"roster":"picks"); touch(to.d,mv.type==="pl"?"roster":"picks");
     if(mv.type==="pl"){
       var i=from.d.players.indexOf(mv.item); if(i<0) return;
       from.d.players.splice(i,1);
@@ -1650,6 +1699,20 @@ function applyPicks(d,pk,teamName,replace,issues){
   }
   return n;
 }
+function readPickRows(d,rows,teamName,issues){
+  var added=0, same=0;
+  rows.forEach(function(r,i){
+    var y=num(r&&r.year), rd=num(r&&r.round), t=r&&r.team?String(r.team).trim():"";
+    if(y==null||rd==null||!t){issues.push({level:"bad",text:teamName+": pick "+(i+1)+" is missing "+[y==null?"year":"",rd==null?"round":"",!t?"original team":""].filter(Boolean).join(", ")+", so it was skipped."});return;}
+    var dup=d.picks.filter(function(x){return x.year===y&&String(x.round)===String(rd)&&(x.team||"").toLowerCase()===t.toLowerCase();})[0];
+    if(dup){same++; if(r.protection&&!dup.prot) dup.prot=String(r.protection); return;}
+    var own=matchesTeam(t,teamName), note=r.note?String(r.note):"";
+    d.picks.push({id:uid(),year:y,round:String(rd),team:t,status:own?"Own":"Acquired",prot:r.protection?String(r.protection):"",note:note});
+    if(note) issues.push({level:"warn",text:teamName+", "+y+" round "+rd+" pick: "+note});
+    added++;
+  });
+  return {added:added,same:same};
+}
 function handleWorkbook(file){
   var box=$("xl-box");
   try{location.hash="roster";}catch(e){} showTab();
@@ -1694,6 +1757,7 @@ function doImport(){
   } else { var td=tdata(target); if(!td) return; holder=td.d; label=td.name; }
   var ex=extractPlayers(c,seasonStart()==null?null:seasonStart()%100,issues);
   if(replace) holder.players.splice(0);
+  touch(holder,"roster"); if(P.picks) touch(holder,"picks");
   var res=applyRows(holder.players,holder.ratingLog,ex.rows,0,"missing");
   res.miss.forEach(function(x){issues.push({level:x.fields.indexOf("salary")>=0?"bad":"warn",text:x.name+": the sheet has no "+x.fields.join(", ")+"."});});
   if(replace) holder.rot={m:{},st:{},pp:{}};
@@ -1823,7 +1887,7 @@ function renderLottery(){
 function onRecord(e){
   var k=e.target.getAttribute&&e.target.getAttribute("data-rec"); if(!k) return;
   var a=k.split(":"), r=S.records[a[0]]=S.records[a[0]]||{}, v=num(e.target.value);
-  r[a[1]]=v==null?null:Math.max(0,Math.round(v));
+  r[a[1]]=v==null?null:Math.max(0,Math.round(v)); r.at=new Date().toISOString(); S.recordsAt=r.at;
   var gp=(r.w||0)+(r.l||0), cell=$("wp-"+a[0]); if(cell) cell.textContent=gp?((r.w||0)/gp).toFixed(3):"—";
   save(); renderLottery();
 }
@@ -1865,7 +1929,7 @@ function auditText(){
 }
 
 /* ---------- orchestration ---------- */
-function refresh(){renderSummary();renderRotChecks();renderTrade();renderExtOut();renderScen();renderTeams();renderStandings();renderAudit();}
+function refresh(){renderUpd();renderSummary();renderRotChecks();renderTrade();renderExtOut();renderScen();renderTeams();renderStandings();renderAudit();}
 function renderAll(){
   renderSettings();renderLedger();renderLog();renderRotTable();renderExtInputs();renderPicks();renderTargets();renderDevTable();
   renderTeamBar(); renderGP(); renderTB(); refresh(); $("rules").value=S.rules;
@@ -1878,7 +1942,7 @@ function init(){
   lg.addEventListener("input",onLedger); lg.addEventListener("change",onLedger); lg.addEventListener("focusin",onLedgerFocus);
   lg.addEventListener("click",function(e){
     var id=e.target.getAttribute&&e.target.getAttribute("data-del"); if(!id) return;
-    S.players=S.players.filter(function(p){return p.id!==id;}); delete outSet[id]; save(); renderAll();
+    S.players=S.players.filter(function(p){return p.id!==id;}); delete outSet[id]; touch(S,"roster"); save(); renderAll();
   });
   $("settings").addEventListener("input",onSettings); $("settings").addEventListener("change",onSettings);
   $("rules").addEventListener("input",function(){S.rules=$("rules").value;save();});
@@ -1896,7 +1960,7 @@ function init(){
   $("btn-trade-reset").addEventListener("click",function(){outSet={};$("in-in").value=0;renderLedger();renderTrade();});
   $("btn-fl").addEventListener("click",runFiller); $("fl-out").addEventListener("click",onFill);
   bindGen("picks-tbl"); bindGen("targets-tbl");
-  $("btn-pick-add").addEventListener("click",function(){var y=seasonStart();S.picks.push({id:uid(),year:y==null?null:y+1,round:"1",team:"Dallas",status:"Own",prot:"",note:""});save();renderPicks();});
+  $("btn-pick-add").addEventListener("click",function(){var y=seasonStart();S.picks.push({id:uid(),year:y==null?null:y+1,round:"1",team:"Dallas",status:"Own",prot:"",note:""});touch(S,"picks");save();renderPicks();renderUpd();renderTeams();});
   $("btn-target-add").addEventListener("click",function(){S.targets.push({id:uid(),name:"",pos:"",year:null,tier:"Top target",note:""});save();renderTargets();});
   $("tb-slots").addEventListener("change",function(e){var i=e.target.getAttribute("data-slot"); if(i==null) return; tb.slots[+i]=e.target.value; tb.assets={}; renderTB();});
   $("tb-teams").addEventListener("change",function(e){var k=e.target.getAttribute("data-asset"); if(!k) return; if(e.target.value) tb.assets[k]=e.target.value; else delete tb.assets[k]; renderTBSum(tbTeams());});
@@ -1913,7 +1977,7 @@ function init(){
     try{navigator.clipboard.writeText(ta.value).then(function(){msg.textContent="Copied.";},fb);}catch(x){fb();}
   });
   $("st-tbl").addEventListener("input",onRecord);
-  $("btn-rec-clear").addEventListener("click",function(){S.records={};save();renderStandings();});
+  $("btn-rec-clear").addEventListener("click",function(){S.records={};S.recordsAt="";save();renderStandings();renderUpd();renderTeams();});
   $("audit-tbl").addEventListener("click",function(e){var id=e.target.getAttribute&&e.target.getAttribute("data-aopen"); if(id) switchTeam(id);});
   $("btn-audit-copy").addEventListener("click",function(){
     var txt=auditText(), msg=$("audit-msg");
